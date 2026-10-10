@@ -226,6 +226,12 @@ def xoa_danh_muc() -> dict[str, int]:
         "khu_vuc": 0,
     }
     with transaction.atomic():
+        # Đơn của khách mẫu (từ P2). DonSuaChua thuộc gói lõi (tầng trên) — lấy lớp qua quan hệ ngược, không import.
+        DonSuaChua = KhachHang.ds_don.rel.related_model
+        don_mau = DonSuaChua.objects.filter(khach_hang__so_dien_thoai__startswith=TIEN_TO_SDT)
+        ket_qua["don"] = don_mau.count()
+        don_mau.exclude(don_goc=None).delete()  # đơn bảo hành trước (đơn gốc được PROTECT)
+        don_mau.delete()
         ket_qua["khach_hang"] = (
             KhachHang.objects.filter(so_dien_thoai__startswith=TIEN_TO_SDT)
             .delete()[1]

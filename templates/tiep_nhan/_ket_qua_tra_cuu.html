@@ -1,0 +1,43 @@
+{% load trang_thai %}
+{% if loi %}
+  <p class="text-sm text-red-700" role="alert">{{ loi }}</p>
+{% elif kh %}
+  <div class="rounded border border-slate-200 bg-white p-3">
+    <p class="font-semibold">{{ kh.ho_ten|default:"(chưa có tên)" }}
+      {% if kh.la_vip %}<span class="rounded bg-amber-300 px-2 text-sm">VIP</span>{% endif %}
+      <a href="{% url 'danh_muc:khach_hang_chi_tiet' kh.pk %}" class="ml-2 text-sm font-normal underline" target="_blank">Hồ sơ</a>
+    </p>
+    <fieldset class="mt-2">
+      <legend class="mb-1 font-medium">Chọn địa chỉ</legend>
+      {% for dc in kh.ds_dia_chi.all %}
+        {% with ma_dc=dc.pk|stringformat:"s" %}
+        <div class="mb-2 rounded border border-slate-100 p-2">
+          <label class="flex items-start gap-2">
+            <input type="radio" name="dia_chi_id" value="{{ dc.pk }}" class="mt-1 h-5 w-5"
+                   {% if chon_dia_chi == ma_dc or not chon_dia_chi and dc.la_mac_dinh %}checked{% endif %}>
+            <span>{{ dc.dia_chi_chi_tiet }} <span class="text-slate-500">({{ dc.khu_vuc }})</span>{% if dc.ghi_chu_duong_di %}<br><span class="text-sm text-slate-500">{{ dc.ghi_chu_duong_di }}</span>{% endif %}</span>
+          </label>
+          {% if dc.ds_thiet_bi.all %}
+            <div class="ml-7 mt-1 space-y-1 text-sm">
+              {% for tb in dc.ds_thiet_bi.all %}
+                <label class="flex items-center gap-2"><input type="checkbox" name="thiet_bi_ids" value="{{ tb.pk }}" class="h-5 w-5" {% if tb.pk|stringformat:"s" in chon_thiet_bi %}checked{% endif %}> {{ tb }}</label>
+              {% endfor %}
+            </div>
+          {% endif %}
+        </div>
+        {% endwith %}
+      {% endfor %}
+      <label class="flex items-center gap-2"><input type="radio" name="dia_chi_id" value="" class="h-5 w-5" {% if chon_dia_chi == "" %}checked{% endif %}> Địa chỉ mới (nhập bên dưới)</label>
+    </fieldset>
+    {% if kh.don_gan_nhat %}
+      <h3 class="mt-3 font-medium">5 đơn gần nhất</h3>
+      <ul class="text-sm">
+        {% for d in kh.don_gan_nhat %}
+          <li><a href="{% url 'chi_tiet_don' d.ma_don %}" class="font-mono underline" target="_blank">{{ d.ma_don }}</a> {% nhan_trang_thai d.trang_thai %} {{ d.dich_vu_yeu_cau.ten_dich_vu }} · {{ d.ngay_tiep_nhan|date:"d/m/Y" }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+  </div>
+{% elif sdt %}
+  <p class="rounded border border-sky-200 bg-sky-50 px-3 py-2 text-sm">Khách mới — nhập địa chỉ mới bên dưới (tên khách được để trống).</p>
+{% endif %}

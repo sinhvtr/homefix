@@ -1,0 +1,72 @@
+{% extends bo_cuc %}
+{% block title %}Tiếp nhận đơn — HomeFix{% endblock %}
+{% block tieu_de %}Tiếp nhận đơn mới{% endblock %}
+{% block noi_dung %}
+<form method="post" class="grid max-w-6xl grid-cols-1 gap-6 lg:grid-cols-2" novalidate>
+  {% csrf_token %}
+  {% if form.non_field_errors %}
+    <div class="rounded border border-red-300 bg-red-50 px-3 py-2 text-red-800 lg:col-span-2" role="alert">{% for loi in form.non_field_errors %}<p>{{ loi }}</p>{% endfor %}</div>
+  {% endif %}
+
+  <section class="space-y-4">
+    <h2 class="text-lg font-semibold">1. Khách hàng</h2>
+    <div>
+      <label for="{{ form.so_dien_thoai.id_for_label }}" class="mb-1 block font-medium">{{ form.so_dien_thoai.label }} <span class="text-red-700">*</span></label>
+      <input type="text" name="so_dien_thoai" id="{{ form.so_dien_thoai.id_for_label }}" value="{{ form.so_dien_thoai.value|default_if_none:'' }}"
+             inputmode="tel" autocomplete="off" autofocus class="{{ form.so_dien_thoai.field.widget.attrs.class }}"
+             hx-get="{% url 'tra_cuu_khach' %}" hx-trigger="input changed delay:400ms, change" hx-target="#ket-qua-tra-cuu">
+      {% for loi in form.so_dien_thoai.errors %}<p class="mt-1 text-sm text-red-700">{{ loi }}</p>{% endfor %}
+    </div>
+    <div id="ket-qua-tra-cuu" aria-live="polite">{% if sdt %}{% include "tiep_nhan/_ket_qua_tra_cuu.html" %}{% endif %}</div>
+    {% for loi in form.dia_chi_id.errors %}<p class="text-sm text-red-700">{{ loi }}</p>{% endfor %}
+    {% for loi in form.thiet_bi_ids.errors %}<p class="text-sm text-red-700">{{ loi }}</p>{% endfor %}
+    {% with truong=form.ho_ten %}{% include "chung/_truong.html" %}{% endwith %}
+    <fieldset class="space-y-3 rounded border border-slate-200 p-3">
+      <legend class="px-1 font-medium">Địa chỉ mới (khi không chọn địa chỉ có sẵn)</legend>
+      {% with truong=form.dia_chi_chi_tiet %}{% include "chung/_truong.html" %}{% endwith %}
+      {% with truong=form.khu_vuc %}{% include "chung/_truong.html" %}{% endwith %}
+      {% with truong=form.ghi_chu_duong_di %}{% include "chung/_truong.html" %}{% endwith %}
+    </fieldset>
+    <fieldset class="grid grid-cols-1 gap-3 rounded border border-slate-200 p-3 sm:grid-cols-3">
+      <legend class="px-1 font-medium">Thêm thiết bị (tùy chọn)</legend>
+      {% with truong=form.thiet_bi_moi_loai %}{% include "chung/_truong.html" %}{% endwith %}
+      {% with truong=form.thiet_bi_moi_hang %}{% include "chung/_truong.html" %}{% endwith %}
+      {% with truong=form.thiet_bi_moi_vi_tri %}{% include "chung/_truong.html" %}{% endwith %}
+    </fieldset>
+  </section>
+
+  <section class="space-y-4">
+    <h2 class="text-lg font-semibold">2. Yêu cầu</h2>
+    <div>
+      <label for="{{ form.dich_vu_yeu_cau.id_for_label }}" class="mb-1 block font-medium">{{ form.dich_vu_yeu_cau.label }} <span class="text-red-700">*</span></label>
+      <input type="search" id="loc-dich-vu" placeholder="Gõ để lọc dịch vụ theo tên…" class="mb-1 block w-full min-h-11 rounded border border-slate-300 px-3" aria-label="Lọc dịch vụ">
+      {{ form.dich_vu_yeu_cau }}
+      {% for loi in form.dich_vu_yeu_cau.errors %}<p class="mt-1 text-sm text-red-700">{{ loi }}</p>{% endfor %}
+    </div>
+    {% with truong=form.mo_ta_su_co %}{% include "chung/_truong.html" %}{% endwith %}
+    {% with truong=form.kenh_tiep_nhan %}{% include "chung/_truong.html" %}{% endwith %}
+    <h2 class="pt-2 text-lg font-semibold">3. Lịch hẹn</h2>
+    <p class="text-sm text-slate-600">Khách chốt giờ ngay → chọn ngày và khung giờ (đơn vào “Chờ cử thợ”). Chưa chốt → ghi khung giờ mong muốn (đơn “Chờ khách xác nhận lịch”).</p>
+    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+      {% with truong=form.ngay_hen %}{% include "chung/_truong.html" %}{% endwith %}
+      {% with truong=form.khung_gio %}{% include "chung/_truong.html" %}{% endwith %}
+    </div>
+    {% with truong=form.khung_gio_mong_muon %}{% include "chung/_truong.html" %}{% endwith %}
+    <div class="flex items-center gap-4 pt-2">
+      <button type="submit" class="min-h-11 rounded bg-sky-700 px-6 py-2 text-lg font-semibold text-white hover:bg-sky-800">Lưu đơn</button>
+      <a href="{% url 'tong_dai' %}" class="underline">Về bảng đơn</a>
+    </div>
+  </section>
+</form>
+<script>
+  // Lọc nhanh danh sách dịch vụ theo tên (không cần thư viện ngoài)
+  document.getElementById("loc-dich-vu").addEventListener("input", function () {
+    const tu = this.value.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/đ/g, "d");
+    for (const o of document.querySelectorAll("#{{ form.dich_vu_yeu_cau.id_for_label }} option")) {
+      if (!o.value) continue;
+      const ten = o.textContent.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/đ/g, "d");
+      o.hidden = tu && !ten.includes(tu);
+    }
+  });
+</script>
+{% endblock %}

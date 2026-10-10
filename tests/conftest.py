@@ -13,7 +13,7 @@ class NguoiDungFactory(factory.django.DjangoModelFactory):
         model = NguoiDung
         skip_postgeneration_save = True
 
-    so_dien_thoai = factory.Sequence(lambda n: f"09{n:08d}")
+    so_dien_thoai = factory.Sequence(lambda n: f"097{n:07d}")  # tránh dải 0900… của dữ liệu mẫu
     username = factory.LazyAttribute(lambda o: o.so_dien_thoai)
     ho_ten = factory.Sequence(lambda n: f"Người dùng {n}")
     vai_tro = VaiTro.TONG_DAI
@@ -124,3 +124,54 @@ def client_vai_tro(client, db):
         return client
 
     return tao
+
+
+def tao_don(
+    trang_thai="CHO_XAC_NHAN_LICH",
+    *,
+    nhom="VE_SINH_BAO_DUONG",
+    dia_chi=None,
+    dich_vu=None,
+    nguoi_tao=None,
+    loai_don="THUONG",
+    don_goc=None,
+    **kw,
+):
+    """Tạo đơn qua khoi_tao (T1) rồi — CHỈ để dựng dữ liệu kiểm thử — đặt thẳng trạng thái bằng QuerySet.update."""
+    from apps.don_sua_chua.dao import sinh_ma_don
+    from apps.don_sua_chua.models import DonSuaChua
+
+    dc = dia_chi or DiaChiFactory()
+    don = DonSuaChua(
+        ma_don=sinh_ma_don(),
+        khach_hang=dc.khach_hang,
+        dia_chi=dc,
+        dich_vu_yeu_cau=dich_vu or DichVuFactory(nhom_dich_vu=nhom),
+        kenh_tiep_nhan="DIEN_THOAI",
+        nguoi_tao=nguoi_tao or NguoiDungFactory(),
+        loai_don=loai_don,
+        don_goc=don_goc,
+        **kw,
+    )
+    don.khoi_tao(da_chot_lich=False)
+    if trang_thai != "CHO_XAC_NHAN_LICH":
+        DonSuaChua.objects.filter(pk=don.pk).update(trang_thai=trang_thai)
+        don.refresh_from_db()
+    return don
+
+
+def tao_lich(don, ngay_gio=None, gio=2, trang_thai="HIEU_LUC"):
+    from datetime import timedelta
+
+    from django.utils import timezone
+
+    from apps.tiep_nhan_dieu_phoi.models import LichHen
+
+    bd = ngay_gio or timezone.now() + timedelta(days=1)
+    return LichHen.objects.create(
+        don=don,
+        bat_dau=bd,
+        ket_thuc=bd + timedelta(hours=gio),
+        trang_thai=trang_thai,
+        nguoi_tao=don.nguoi_tao,
+    )

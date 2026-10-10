@@ -93,3 +93,18 @@ class NhatKyThaoTac(MoHinhCoBan):
 
     def delete(self, *args, **kwargs):
         raise NhatKyChiDuocThem("Không được xóa nhật ký thao tác.")
+
+
+class BoDemMaDon(MoHinhCoBan):
+    """Bộ đếm số thứ tự đơn trong ngày để sinh mã HFyyMMdd-nnn (SPEC 5.2)."""
+
+    ngay = models.DateField("ngày", unique=True)
+    so_cuoi = models.PositiveIntegerField("số cuối", default=0)
+
+    class Meta:
+        db_table = "tblBoDemMaDon"
+        verbose_name = "bộ đếm mã đơn"
+        verbose_name_plural = "bộ đếm mã đơn"
+
+    def __str__(self):
+        return f"{self.ngay:%d/%m/%Y}: {self.so_cuoi}"

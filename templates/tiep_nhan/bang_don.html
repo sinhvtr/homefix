@@ -1,0 +1,18 @@
+{% extends bo_cuc %}
+{% block title %}Bảng đơn — HomeFix{% endblock %}
+{% block tieu_de %}Bảng đơn{% endblock %}
+{% block noi_dung %}
+<form method="get" id="form-loc" class="mb-4 flex flex-wrap items-end gap-2">
+  <label class="text-sm">Ngày hẹn<br>{{ form_loc.ngay }}</label>
+  <label class="text-sm">Khu vực<br>{{ form_loc.khu_vuc }}</label>
+  <label class="text-sm">Trạng thái<br>{{ form_loc.trang_thai }}</label>
+  <label class="text-sm">Mã đơn / SĐT<br><input type="search" name="q" value="{{ form_loc.q.value|default_if_none:'' }}" placeholder="HF… hoặc số điện thoại" class="min-h-11 rounded border border-slate-300 px-3"></label>
+  <button class="min-h-11 rounded border border-slate-300 bg-white px-4">Lọc</button>
+  <a href="{% url 'tong_dai' %}" class="min-h-11 px-2 py-2 underline">Bỏ lọc</a>
+  {% if duoc_ghi %}<a href="{% url 'tiep_nhan' %}" class="ml-auto inline-flex min-h-11 items-center rounded bg-sky-700 px-4 font-semibold text-white">+ Đơn mới</a>{% endif %}
+</form>
+{# Tự làm mới phần bảng mỗi 30 giây bằng HTMX (UC06) #}
+<div id="bang-don" hx-get="{% url 'tong_dai' %}" hx-include="#form-loc" hx-trigger="every 30s" hx-swap="innerHTML">
+  {% include "tiep_nhan/_bang_don_noi_dung.html" %}
+</div>
+{% endblock %}

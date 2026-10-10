@@ -4,7 +4,7 @@ import pytest
 
 from apps.he_thong.models import CauHinh
 from apps.tai_khoan.models import VaiTro
-from tests.conftest import DichVuFactory, NguoiDungFactory, ThietBiFactory, ThoFactory
+from tests.conftest import DichVuFactory, NguoiDungFactory, ThietBiFactory, ThoFactory, tao_don
 
 pytestmark = pytest.mark.django_db
 
@@ -61,6 +61,15 @@ MA_TRAN = [
     ("GET", "/danh-muc/dia-chi/{dc}/thiet-bi/moi/", {QT, TD}),
     ("GET", "/danh-muc/thiet-bi/{tb}/sua/", {QT, TD}),
     ("POST", "/danh-muc/thiet-bi/{tb}/xoa/", {QT}),
+    # Đơn sửa chữa (P2): QT, TĐ CRU + hủy; KT, GĐ R; thợ chỉ đơn được giao (trang thợ riêng, P3)
+    ("GET", "/don/moi/", {QT, TD}),
+    ("GET", "/khach-hang/tra-cuu/?sdt=0912345678", {QT, TD}),
+    ("GET", "/don/{ma}/", VAN_PHONG),
+    ("POST", "/don/{ma}/chot-lich/", {QT, TD}),
+    ("POST", "/don/{ma}/doi-hen/", {QT, TD}),
+    ("POST", "/don/{ma}/khach-chua-tra-loi/", {QT, TD}),
+    ("POST", "/don/{ma}/giuc/", {QT, TD}),
+    ("GET", "/don/{ma}/huy/", {QT, TD}),
 ]
 
 CHU_THE = [None, QT, TD, THO, KT, GD]  # None = chưa đăng nhập
@@ -78,6 +87,7 @@ def doi_tuong():
         "kh": tb.dia_chi.khach_hang.pk,
         "dc": tb.dia_chi.pk,
         "tb": tb.pk,
+        "ma": tao_don(dia_chi=tb.dia_chi).ma_don,
     }
 
 

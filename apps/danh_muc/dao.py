@@ -1,7 +1,7 @@
 """DAO danh mục (UC13). Mọi phương thức ghi: kiểm quyền, transaction.atomic(), ghi nhật ký."""
 
 from django.core.exceptions import ValidationError
-from django.db import transaction
+from django.db import models, transaction
 from django.db.models import Count, ProtectedError, Q, RestrictedError
 
 from apps.he_thong.cau_hinh import cau_hinh
@@ -304,6 +304,24 @@ class KhachHangDAO:
     def lay_chi_tiet(nguoi_dung, pk) -> KhachHang:
         kiem_tra_vai_tro(nguoi_dung, *VAN_PHONG)
         return KhachHang.objects.prefetch_related("ds_dia_chi__khu_vuc", "ds_dia_chi__ds_thiet_bi").get(pk=pk)
+
+    @staticmethod
+    def tra_cuu_theo_sdt(nguoi_dung, so_dien_thoai: str) -> KhachHang | None:
+        """UC02 bước 1: khách theo SĐT (chính hoặc phụ) kèm địa chỉ, thiết bị và 5 đơn gần nhất (`don_gan_nhat`)."""
+        kiem_tra_vai_tro(nguoi_dung, *GHI_KHACH_HANG)
+        sdt = chuan_hoa_sdt(so_dien_thoai)
+        kh = (
+            KhachHang.objects.filter(Q(so_dien_thoai=sdt) | Q(so_dien_thoai_phu=sdt))
+            .prefetch_related("ds_dia_chi__khu_vuc", "ds_dia_chi__ds_thiet_bi")
+            .order_by(models.Case(models.When(so_dien_thoai=sdt, then=0), default=1))
+            .first()
+        )
+        if kh is not None:
+            # DonSuaChua thuộc gói lõi (tầng trên) — đọc qua quan hệ ngược, không import.
+            kh.don_gan_nhat = list(
+                kh.ds_don.select_related("dich_vu_yeu_cau", "dia_chi").order_by("-ngay_tiep_nhan")[:5]
+            )
+        return kh
 
     @staticmethod
     def kiem_tra_trung_sdt(sdt: str, tru_pk=None) -> None:

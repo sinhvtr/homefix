@@ -1,0 +1,6 @@
+<div class="mb-3">
+  <label for="{{ ma }}" class="mb-1 block text-sm font-medium">{{ nhan }}</label>
+  <textarea id="{{ ma }}" readonly rows="3" class="w-full rounded border border-slate-300 p-2 text-sm">{{ noi_dung }}</textarea>
+  <button type="button" class="mt-1 min-h-11 rounded border border-slate-300 px-3"
+          onclick="const o=document.getElementById('{{ ma }}');o.select();(navigator.clipboard?navigator.clipboard.writeText(o.value):Promise.reject()).catch(()=>document.execCommand('copy'));this.textContent='Đã sao chép';">Sao chép</button>
+</div>

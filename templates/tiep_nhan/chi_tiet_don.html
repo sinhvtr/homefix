@@ -1,0 +1,95 @@
+{% extends bo_cuc %}
+{% load trang_thai dinh_dang %}
+{% block title %}{{ don.ma_don }} — HomeFix{% endblock %}
+{% block tieu_de %}<span class="font-mono">{{ don.ma_don }}</span> {% nhan_trang_thai don.trang_thai %}
+  {% if don.uu_tien %}<span class="rounded bg-amber-300 px-2 text-base">VIP</span>{% endif %}
+  {% if don.thieu_thong_tin and dang_xu_ly %}<span class="rounded bg-orange-200 px-2 text-base text-orange-900">Thiếu thông tin</span>{% endif %}
+{% endblock %}
+{% block noi_dung %}
+<div class="grid max-w-6xl grid-cols-1 gap-6 lg:grid-cols-2">
+  <section class="rounded bg-white p-4">
+    <h2 class="mb-2 text-lg font-semibold">Thông tin đơn</h2>
+    <dl class="grid grid-cols-[10rem_1fr] gap-x-3 gap-y-1">
+      <dt class="font-medium">Khách hàng</dt><dd><a href="{% url 'danh_muc:khach_hang_chi_tiet' don.khach_hang_id %}" class="underline">{{ don.khach_hang.ho_ten|default:"(chưa có tên)" }}</a></dd>
+      <dt class="font-medium">Số điện thoại</dt><dd class="font-mono">{% if an_sdt %}{{ don.khach_hang.so_dien_thoai|an_sdt }}{% else %}<a href="tel:{{ don.khach_hang.so_dien_thoai }}" class="underline">{{ don.khach_hang.so_dien_thoai }}</a>{% endif %}</dd>
+      <dt class="font-medium">Địa chỉ</dt><dd>{{ don.dia_chi.dia_chi_chi_tiet }} ({{ don.dia_chi.khu_vuc }}){% if don.dia_chi.ghi_chu_duong_di %}<br><span class="text-sm text-slate-500">{{ don.dia_chi.ghi_chu_duong_di }}</span>{% endif %}</dd>
+      <dt class="font-medium">Dịch vụ</dt><dd>{{ don.dich_vu_yeu_cau.ten_dich_vu }} <span class="text-sm text-slate-500">({{ don.dich_vu_yeu_cau.get_nhom_dich_vu_display }})</span></dd>
+      <dt class="font-medium">Thiết bị</dt><dd>{% for tb in don.thiet_bi.all %}{{ tb }}{% if not forloop.last %}; {% endif %}{% empty %}—{% endfor %}</dd>
+      <dt class="font-medium">Mô tả sự cố</dt><dd>{{ don.mo_ta_su_co|linebreaksbr|default:"—" }}</dd>
+      <dt class="font-medium">Kênh</dt><dd>{{ don.get_kenh_tiep_nhan_display }}</dd>
+      <dt class="font-medium">Tiếp nhận</dt><dd>{{ don.ngay_tiep_nhan }} · {{ don.nguoi_tao.ho_ten }}</dd>
+      <dt class="font-medium">Thợ</dt><dd>{{ don.tho.ho_ten|default:"—" }}</dd>
+      {% if don.so_lan_giuc %}<dt class="font-medium">Khách giục</dt><dd>{{ don.so_lan_giuc }} lần</dd>{% endif %}
+      {% if don.ly_do_huy %}<dt class="font-medium">Lý do hủy</dt><dd>{{ don.ly_do_huy }}</dd>{% endif %}
+    </dl>
+    {% if duoc_ghi %}
+      <div class="mt-4 flex flex-wrap items-center gap-3">
+        <a href="{% url 'tiep_nhan' %}?sdt={{ don.khach_hang.so_dien_thoai }}&dia_chi={{ don.dia_chi_id }}" class="inline-flex min-h-11 items-center rounded border border-slate-300 px-3">Tạo thêm đơn cho cuộc gọi này</a>
+        {% if dang_xu_ly %}<a href="{% url 'huy_don' don.ma_don %}" class="inline-flex min-h-11 items-center rounded border border-red-300 px-3 text-red-700">Hủy đơn</a>{% endif %}
+      </div>
+    {% endif %}
+    {% if don.ds_hang_muc.all %}
+      <h3 class="mt-4 font-semibold">Hạng mục</h3>
+      <table class="w-full text-left text-sm">
+        <thead><tr class="border-b"><th class="p-1">Loại</th><th class="p-1">Mô tả</th><th class="p-1 text-right">SL</th><th class="p-1 text-right">Đơn giá</th><th class="p-1 text-right">Thành tiền</th></tr></thead>
+        <tbody>{% for hm in don.ds_hang_muc.all %}<tr class="border-b"><td class="p-1">{{ hm.get_loai_display }}</td><td class="p-1">{{ hm.mo_ta }}</td><td class="p-1 text-right">{{ hm.so_luong|floatformat:"-2" }}</td><td class="p-1 text-right">{{ hm.don_gia_thuc_te|tien }}</td><td class="p-1 text-right">{{ hm.thanh_tien|tien }}</td></tr>{% endfor %}</tbody>
+      </table>
+    {% endif %}
+  </section>
+
+  <section class="space-y-4">
+    <div class="rounded bg-white p-4">
+      <h2 class="mb-2 text-lg font-semibold">Lịch hẹn</h2>
+      {% if lich %}
+        <p class="text-lg">{{ lich.khung_gio }}</p>
+      {% else %}
+        <p>Chưa chốt lịch{% if don.khung_gio_mong_muon %} — khách mong muốn: {{ don.khung_gio_mong_muon }}{% endif %}.</p>
+        {% if don.trang_thai == "CHO_XAC_NHAN_LICH" %}<p class="text-sm text-slate-600">Đã nhắc khách {{ don.so_lan_nhac_xac_nhan }} lần{% if don.lan_nhac_cuoi %}, lần cuối {{ don.lan_nhac_cuoi }}{% endif %}.</p>{% endif %}
+      {% endif %}
+      {% if form_chot_lich %}
+        <form method="post" action="{% url 'chot_lich' don.ma_don %}" class="mt-3 flex flex-wrap items-end gap-2">
+          {% csrf_token %}
+          <label class="text-sm">Ngày<br>{{ form_chot_lich.ngay }}</label>
+          <label class="text-sm">Khung giờ<br>{{ form_chot_lich.khung_gio }}</label>
+          <button class="min-h-11 rounded bg-sky-700 px-4 font-semibold text-white">Chốt lịch</button>
+        </form>
+        <form method="post" action="{% url 'khach_chua_tra_loi' don.ma_don %}" class="mt-2">{% csrf_token %}
+          <button class="min-h-11 rounded border border-slate-300 px-3">Khách chưa trả lời</button>
+        </form>
+      {% endif %}
+      {% if form_doi_hen %}
+        <details class="mt-3"><summary class="cursor-pointer underline">Đổi hẹn</summary>
+          <form method="post" action="{% url 'doi_hen' don.ma_don %}" class="mt-2 flex flex-wrap items-end gap-2">
+            {% csrf_token %}
+            <label class="text-sm">Ngày<br>{{ form_doi_hen.ngay }}</label>
+            <label class="text-sm">Khung giờ<br>{{ form_doi_hen.khung_gio }}</label>
+            <label class="text-sm">Lý do<br>{{ form_doi_hen.ly_do }}</label>
+            <button class="min-h-11 rounded bg-sky-700 px-4 font-semibold text-white">Lưu lịch mới</button>
+          </form>
+        </details>
+      {% endif %}
+      {% if lich_su_lich %}
+        <h3 class="mt-3 text-sm font-semibold">Lịch sử lịch hẹn</h3>
+        <ul class="text-sm">{% for l in lich_su_lich %}<li>{{ l.khung_gio }} — {{ l.get_trang_thai_display }}{% if l.ly_do_doi_hen %} ({{ l.ly_do_doi_hen }}){% endif %} · {{ l.nguoi_tao.ho_ten }}</li>{% endfor %}</ul>
+      {% endif %}
+    </div>
+
+    {% if duoc_ghi and tin_nhan or duoc_ghi and tin_nhan_goi_lai %}
+      <div class="rounded bg-white p-4">
+        <h2 class="mb-2 text-lg font-semibold">Tin nhắn mẫu</h2>
+        {% if tin_nhan %}{% include "tiep_nhan/_sao_chep.html" with ma="tn-xac-nhan" noi_dung=tin_nhan nhan="Xác nhận lịch" %}{% endif %}
+        {% if tin_nhan_goi_lai %}{% include "tiep_nhan/_sao_chep.html" with ma="tn-goi-lai" noi_dung=tin_nhan_goi_lai nhan="Nhắc khách chốt giờ" %}{% endif %}
+      </div>
+    {% endif %}
+
+    <div class="rounded bg-white p-4">
+      <h2 class="mb-2 text-lg font-semibold">Nhật ký đơn</h2>
+      <ul class="space-y-1 text-sm">
+        {% for nk in nhat_ky %}
+          <li><span class="text-slate-500">{{ nk.thoi_diem }}</span> · {{ nk.nguoi_dung.ho_ten|default:"Hệ thống" }} · <strong>{{ nk.hanh_dong }}</strong>{% if nk.du_lieu_sau.trang_thai %}: {{ nk.du_lieu_truoc.trang_thai|default:"(đầu)" }} → {{ nk.du_lieu_sau.trang_thai }} ({{ nk.du_lieu_sau.chuyen }}){% elif nk.du_lieu_sau.khung_gio %}: {{ nk.du_lieu_sau.khung_gio }}{% endif %}</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </section>
+</div>
+{% endblock %}

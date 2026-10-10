@@ -1,0 +1,114 @@
+{% extends bo_cuc %}
+{% load trang_thai dinh_dang %}
+{% block title %}Cử thợ {{ don.ma_don }} — HomeFix{% endblock %}
+{% block tieu_de %}Cử thợ <a href="{% url 'chi_tiet_don' don.ma_don %}" class="font-mono underline">{{ don.ma_don }}</a> {% nhan_trang_thai don.trang_thai %}{% if don.uu_tien %} <span class="rounded bg-amber-300 px-2 text-base">VIP</span>{% endif %}{% endblock %}
+{% block noi_dung %}
+<div class="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_24rem]">
+  {# ---------------- Bảng gợi ý (trái) ---------------- #}
+  <section>
+    {% if don.trang_thai == "CHO_CU_THO" %}
+      <form method="post" id="form-gui">
+        {% csrf_token %}<input type="hidden" name="hanh_dong" value="gui">
+        <div class="mb-2 flex items-center justify-between">
+          <h2 class="text-lg font-semibold">Thợ gợi ý ({{ phu_hop|length }})</h2>
+          {% if duoc_ghi %}<button class="min-h-11 rounded bg-sky-700 px-4 font-semibold text-white">Gửi đề nghị nhận việc</button>{% endif %}
+        </div>
+        <p class="mb-2 text-sm text-slate-600">Hệ thống chỉ gợi ý (BR01). Thứ tự: đúng khu vực → ít việc trong ngày → lâu chưa được giao → chính thức trước cộng tác viên.</p>
+        <div class="overflow-x-auto">
+        <table class="w-full border-collapse bg-white text-left text-sm">
+          <thead><tr class="border-b bg-slate-100">
+            {% if duoc_ghi %}<th class="p-2"></th>{% endif %}<th class="p-2">Thợ</th><th class="p-2">Khu vực phụ trách</th><th class="p-2">Việc trong ngày</th><th class="p-2">Đã bận</th><th class="p-2">Dự kiến rảnh</th><th class="p-2">Nhận việc 30 ngày</th><th class="p-2">Ghi chú</th>
+          </tr></thead>
+          <tbody>
+          {% for g in phu_hop %}
+            <tr class="border-b align-top" data-tho="{{ g.tho.pk }}">
+              {% if duoc_ghi %}<td class="p-2"><input type="checkbox" name="tho" value="{{ g.tho.pk }}" class="h-5 w-5" {% if g.dang_cho_phan_hoi %}disabled{% endif %} aria-label="Chọn {{ g.tho.ho_ten }}"></td>{% endif %}
+              <td class="p-2"><span class="font-semibold">{{ g.tho.ho_ten }}</span><br><span class="text-slate-500">{{ g.tho.get_hinh_thuc_display }}</span></td>
+              <td class="p-2">{% if g.phu_trach_khu_vuc %}<span class="rounded bg-green-100 px-1 text-green-900">✓ {{ don.dia_chi.khu_vuc }}</span><br>{% endif %}<span class="text-slate-500">{{ g.khu_vuc|join:", " }}</span></td>
+              <td class="p-2">{{ g.so_viec_trong_ngay }}</td>
+              <td class="p-2">{% for k in g.khung_gio_ban %}{{ k }}<br>{% empty %}—{% endfor %}</td>
+              <td class="p-2">{% if g.du_kien_ranh_luc %}{{ g.du_kien_ranh_luc|time:"H:i" }}{% else %}Rảnh{% endif %}</td>
+              <td class="p-2">{% if g.ty_le_nhan_30_ngay is not None %}{% widthratio g.ty_le_nhan_30_ngay 1 100 %}%{% else %}—{% endif %}</td>
+              <td class="p-2">
+                {% if g.la_tho_don_goc %}<span class="rounded bg-teal-100 px-1">Thợ làm đơn gốc</span> {% endif %}
+                {% if g.dang_cho_phan_hoi %}<span class="rounded bg-sky-100 px-1">Đang chờ phản hồi</span> {% endif %}
+                {% if g.da_tu_choi %}<span class="rounded bg-red-100 px-1">Đã từ chối đơn này</span> {% endif %}
+                {% if g.da_qua_han %}<span class="rounded bg-orange-100 px-1">Đã quá hạn đơn này</span>{% endif %}
+              </td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="8" class="p-3">Không có thợ phù hợp. Chọn một trong hai cách ở khung bên phải (luồng 2a).</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+        </div>
+      </form>
+      <details class="mt-4 rounded bg-white p-3">
+        <summary class="cursor-pointer font-semibold">Không phù hợp ({{ khong_phu_hop|length }})</summary>
+        <ul class="mt-2 space-y-1 text-sm">
+          {% for g in khong_phu_hop %}<li data-tho-loai="{{ g.tho.pk }}"><strong>{{ g.tho.ho_ten }}</strong>: {{ g.ly_do_loai|join:"; " }}</li>{% endfor %}
+        </ul>
+      </details>
+    {% elif don.trang_thai == "DA_CO_THO" %}
+      <p class="rounded bg-white p-4">Đơn đã có thợ: <strong>{{ don.tho.ho_ten }}</strong>.</p>
+    {% else %}
+      <p class="rounded bg-white p-4">Đơn đang “{{ don.get_trang_thai_display }}” — không cử thợ.</p>
+    {% endif %}
+  </section>
+
+  {# ---------------- Thông tin đơn, đề nghị, thao tác (phải) ---------------- #}
+  <aside class="space-y-4">
+    <div class="rounded bg-white p-4 text-sm">
+      <p class="font-semibold">{{ don.dich_vu_yeu_cau.ten_dich_vu }}</p>
+      <p>{{ don.dia_chi.khu_vuc }} · {% if lich %}{{ lich.khung_gio }}{% else %}chưa có lịch{% endif %}</p>
+      <p class="text-slate-600">{{ don.mo_ta_su_co|default:"" }}</p>
+      {% if don.canh_bao_chua_cu_duoc %}<p class="mt-1 rounded bg-red-100 px-2 text-red-800">Chưa cử được thợ: {{ don.ly_do_chua_cu_duoc }}</p>{% endif %}
+    </div>
+    <div class="rounded bg-white p-4 text-sm">
+      <h2 class="mb-2 font-semibold">Đề nghị đã gửi</h2>
+      <ul class="space-y-2">
+        {% for pc in ds_phan_cong %}
+          <li class="border-b pb-1">
+            <strong>{{ pc.tho.ho_ten }}</strong> — {{ pc.get_trang_thai_display }}{% if pc.giao_qua_dien_thoai %} (qua điện thoại){% endif %}
+            {% if pc.trang_thai == "CHO_PHAN_HOI" %}· còn <span data-han="{{ pc.han_phan_hoi|date:'c' }}">…</span>{% endif %}
+            {% if pc.ly_do_tu_choi %}· {{ pc.get_ly_do_tu_choi_display }}{% endif %}{% if pc.ghi_chu %}<br><span class="text-slate-500">{{ pc.ghi_chu }}</span>{% endif %}
+            <br><span class="text-xs text-slate-500">{{ pc.thoi_diem_giao }} · {{ pc.nguoi_giao.ho_ten }} · công dự kiến {{ pc.tien_cong_du_kien|tien }}</span>
+            {% if duoc_ghi and pc.trang_thai == "CHO_PHAN_HOI" %}
+              <form method="post" class="inline">{% csrf_token %}<input type="hidden" name="hanh_dong" value="thu_hoi"><input type="hidden" name="phan_cong" value="{{ pc.pk }}"><button class="text-red-700 underline">Thu hồi</button></form>
+            {% endif %}
+          </li>
+        {% empty %}<li class="text-slate-500">Chưa gửi đề nghị nào.</li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% if duoc_ghi and don.trang_thai == "CHO_CU_THO" %}
+      <details class="rounded bg-white p-4 text-sm">
+        <summary class="cursor-pointer font-semibold">Thợ đã đồng ý qua điện thoại</summary>
+        <form method="post" class="mt-2 space-y-2">{% csrf_token %}<input type="hidden" name="hanh_dong" value="dien_thoai">
+          <select name="tho_dien_thoai" class="block w-full min-h-11 rounded border border-slate-300 px-2" aria-label="Thợ">
+            {% for g in phu_hop %}<option value="{{ g.tho.pk }}">{{ g.tho.ho_ten }}</option>{% endfor %}
+          </select>
+          <textarea name="ghi_chu" rows="2" required placeholder="Ghi chú bắt buộc (gọi lúc nào, thợ nói gì)" class="block w-full rounded border border-slate-300 p-2"></textarea>
+          <button class="min-h-11 rounded bg-sky-700 px-4 font-semibold text-white">Ghi nhận đã giao</button>
+        </form>
+      </details>
+      <details class="rounded bg-white p-4 text-sm">
+        <summary class="cursor-pointer font-semibold">Không có thợ phù hợp</summary>
+        <form method="post" class="mt-2">{% csrf_token %}<input type="hidden" name="hanh_dong" value="doi_lich">
+          <button class="min-h-11 rounded border border-slate-300 px-3">Đề nghị khách đổi lịch</button>
+        </form>
+        <form method="post" class="mt-2 space-y-2">{% csrf_token %}<input type="hidden" name="hanh_dong" value="chua_cu_duoc">
+          <input name="ly_do" required placeholder="Lý do (bắt buộc)" class="block w-full min-h-11 rounded border border-slate-300 px-2">
+          <button class="min-h-11 rounded border border-red-300 px-3 text-red-700">Đánh dấu chưa cử được</button>
+        </form>
+      </details>
+    {% endif %}
+    {% if duoc_ghi and don.trang_thai == "DA_CO_THO" %}
+      <form method="post" class="space-y-2 rounded bg-white p-4 text-sm">{% csrf_token %}<input type="hidden" name="hanh_dong" value="rut_viec">
+        <input name="ly_do" required placeholder="Lý do rút việc" class="block w-full min-h-11 rounded border border-slate-300 px-2">
+        <button class="min-h-11 rounded border border-red-300 px-3 text-red-700">Rút việc khỏi thợ</button>
+      </form>
+    {% endif %}
+  </aside>
+</div>
+{% endblock %}

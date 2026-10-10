@@ -1,6 +1,6 @@
 from django.urls import path, register_converter
 
-from . import views
+from . import views, views_dieu_phoi
 
 
 class MaDonConverter:
@@ -25,4 +25,6 @@ urlpatterns = [
     path("don/<ma_don:ma_don>/khach-chua-tra-loi/", views.khach_chua_tra_loi, name="khach_chua_tra_loi"),
     path("don/<ma_don:ma_don>/giuc/", views.khach_giuc, name="khach_giuc"),
     path("don/<ma_don:ma_don>/huy/", views.huy_don, name="huy_don"),
+    path("don/<ma_don:ma_don>/cu-tho/", views_dieu_phoi.cu_tho, name="cu_tho"),
+    path("tho-lich/", views_dieu_phoi.lich_tho, name="lich_tho"),
 ]

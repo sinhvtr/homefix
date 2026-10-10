@@ -1,3 +1,10 @@
 @import "tailwindcss";
 @source "../templates";
 @source "../apps";
+
+/* Nhãn "Chờ cử thợ quá lâu": viền đỏ nhấp nháy nhẹ (UC06) */
+@keyframes nhap-nhay {
+  50% { box-shadow: 0 0 0 3px rgb(220 38 38 / 0.45); }
+}
+.nhap-nhay { animation: nhap-nhay 1.6s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .nhap-nhay { animation: none; box-shadow: 0 0 0 2px rgb(220 38 38); } }

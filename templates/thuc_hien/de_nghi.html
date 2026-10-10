@@ -1,0 +1,36 @@
+{% extends "base_tho.html" %}
+{% load dinh_dang %}
+{% block title %}Đề nghị {{ don.ma_don }} — HomeFix Thợ{% endblock %}
+{% block tieu_de %}Đề nghị nhận việc{% endblock %}
+{% block noi_dung %}
+{# NFR04: không hiện số điện thoại và địa chỉ chi tiết của khách trước khi nhận #}
+<dl class="space-y-2">
+  <div><dt class="text-base text-slate-500">Dịch vụ</dt><dd class="font-semibold">{{ don.dich_vu_yeu_cau.ten_dich_vu }}</dd></div>
+  <div><dt class="text-base text-slate-500">Khu vực</dt><dd>{{ don.dia_chi.khu_vuc }}</dd></div>
+  <div><dt class="text-base text-slate-500">Khung giờ</dt><dd>{% if don.lich_hieu_luc %}{{ don.lich_hieu_luc.khung_gio }}{% else %}—{% endif %}</dd></div>
+  <div><dt class="text-base text-slate-500">Mô tả sự cố</dt><dd>{{ don.mo_ta_su_co|default:"—" }}</dd></div>
+  <div><dt class="text-base text-slate-500">Tiền công dự kiến</dt><dd class="text-2xl font-bold">{{ pc.tien_cong_du_kien|tien }}</dd></div>
+  <div><dt class="text-base text-slate-500">Hạn trả lời</dt><dd>{% if pc.trang_thai == "QUA_HAN" %}Đã quá hạn — vẫn nhận được nếu chưa ai nhận{% elif pc.trang_thai == "CHO_PHAN_HOI" %}còn <span data-han="{{ pc.han_phan_hoi|date:'c' }}">…</span>{% else %}{{ pc.get_trang_thai_display }}{% endif %}</dd></div>
+</dl>
+
+{% if con_nhan_duoc %}
+  <details class="mt-6">
+    <summary class="min-h-11 cursor-pointer py-2 text-slate-700 underline">Từ chối</summary>
+    <div class="mt-2 grid grid-cols-1 gap-2">
+      {% for ma, nhan in ly_do_tu_choi %}
+        <form method="post" action="{% url 'thuc_hien:tu_choi' pc.pk %}">{% csrf_token %}
+          <input type="hidden" name="ly_do" value="{{ ma }}">
+          <button class="min-h-12 w-full rounded border border-slate-300 px-3 text-left">{{ nhan }}</button>
+        </form>
+      {% endfor %}
+    </div>
+  </details>
+  {# Nút chính cố định đáy màn hình, không hộp xác nhận thứ hai (NFR07, NFR08) #}
+  <form method="post" action="{% url 'thuc_hien:nhan_viec' pc.pk %}" class="fixed inset-x-0 bottom-16 z-20 bg-white/95 px-4 py-3">
+    {% csrf_token %}
+    <button class="min-h-16 w-full rounded-lg bg-green-600 text-2xl font-bold text-white active:bg-green-700">NHẬN VIỆC</button>
+  </form>
+{% else %}
+  <p class="mt-6 rounded bg-slate-100 p-3">Đề nghị này không còn nhận được.</p>
+{% endif %}
+{% endblock %}

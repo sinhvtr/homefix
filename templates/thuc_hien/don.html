@@ -1,0 +1,33 @@
+{% extends "base_tho.html" %}
+{% block title %}{{ don.ma_don }} — HomeFix Thợ{% endblock %}
+{% block tieu_de %}{{ don.ma_don }}{% endblock %}
+{% block noi_dung %}
+<dl class="space-y-2">
+  <div><dt class="text-base text-slate-500">Khung giờ</dt><dd class="font-semibold">{% if lich %}{{ lich.khung_gio }}{% else %}—{% endif %}</dd></div>
+  <div><dt class="text-base text-slate-500">Khách</dt><dd>{{ don.khach_hang.ho_ten|default:"(chưa có tên)" }}</dd></div>
+  <div class="flex gap-2">
+    <a href="tel:{{ don.khach_hang.so_dien_thoai }}" class="flex min-h-12 flex-1 items-center justify-center rounded-lg bg-sky-700 font-semibold text-white">Gọi {{ don.khach_hang.so_dien_thoai }}</a>
+    <a href="{{ url_ban_do }}" target="_blank" rel="noopener" class="flex min-h-12 flex-1 items-center justify-center rounded-lg border border-sky-700 font-semibold text-sky-700">Mở bản đồ</a>
+  </div>
+  <div><dt class="text-base text-slate-500">Địa chỉ</dt><dd>{{ don.dia_chi.dia_chi_chi_tiet }} ({{ don.dia_chi.khu_vuc }})</dd></div>
+  {% if don.dia_chi.ghi_chu_duong_di %}<div><dt class="text-base text-slate-500">Đường đi</dt><dd>{{ don.dia_chi.ghi_chu_duong_di }}</dd></div>{% endif %}
+  <div><dt class="text-base text-slate-500">Dịch vụ</dt><dd>{{ don.dich_vu_yeu_cau.ten_dich_vu }}</dd></div>
+  <div><dt class="text-base text-slate-500">Thiết bị</dt><dd>{% for tb in don.thiet_bi.all %}{{ tb }}{% if not forloop.last %}; {% endif %}{% empty %}—{% endfor %}</dd></div>
+  <div><dt class="text-base text-slate-500">Mô tả sự cố</dt><dd>{{ don.mo_ta_su_co|default:"—" }}</dd></div>
+</dl>
+
+{% if lich_su %}
+  <h2 class="mt-5 font-bold">Lịch sử tại địa chỉ này</h2>
+  <ul class="text-base">{% for d in lich_su %}<li>{{ d.ngay_tiep_nhan|date:"d/m/Y" }} · {{ d.dich_vu_yeu_cau.ten_dich_vu }} · {{ d.get_trang_thai_display }}</li>{% endfor %}</ul>
+{% endif %}
+
+{% if don.trang_thai == "DA_CO_THO" %}
+  <details class="mt-6">
+    <summary class="min-h-11 cursor-pointer py-2 text-red-700 underline">Báo bận / trả việc</summary>
+    <form method="post" action="{% url 'thuc_hien:tra_viec' don.ma_don %}" class="mt-2 space-y-2">{% csrf_token %}
+      <input name="ly_do" required placeholder="Lý do (bắt buộc)" class="block min-h-12 w-full rounded border border-slate-300 px-3">
+      <button class="min-h-12 w-full rounded border border-red-400 font-semibold text-red-700">Trả việc</button>
+    </form>
+  </details>
+{% endif %}
+{% endblock %}

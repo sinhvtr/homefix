@@ -156,6 +156,12 @@ VAPID_PRIVATE_KEY = env("VAPID_PRIVATE_KEY", default="")
 VAPID_EMAIL = env("VAPID_EMAIL", default="")
 TELEGRAM_BOT_TOKEN = env("TELEGRAM_BOT_TOKEN", default="")
 TELEGRAM_BOT_USERNAME = env("TELEGRAM_BOT_USERNAME", default="")
+# Bí mật trong URL webhook Telegram (/telegram/webhook/<secret>/); để trống = tắt webhook, dùng lệnh telegram_poll
+TELEGRAM_WEBHOOK_SECRET = env("TELEGRAM_WEBHOOK_SECRET", default="")
+# Chỉ in thông báo ra log (ConsoleKenh) thay vì gửi Web Push/Telegram — dùng khi phát triển
+THONG_BAO_CHI_CONSOLE = env.bool("THONG_BAO_CHI_CONSOLE", default=False)
+# Gửi thông báo đồng bộ ngay sau commit thay vì xếp hàng django-q2 — chỉ dùng khi kiểm thử
+THONG_BAO_DONG_BO = env.bool("THONG_BAO_DONG_BO", default=False)
 
 BACKUP_KEEP_DAYS = env.int("BACKUP_KEEP_DAYS", default=14)
 

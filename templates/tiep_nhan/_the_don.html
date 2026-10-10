@@ -1,5 +1,5 @@
 {% load trang_thai %}
-<article class="rounded bg-white p-2 text-sm shadow-sm {% if don.uu_tien %}border-2 border-amber-400{% else %}border border-slate-200{% endif %}" data-ma-don="{{ don.ma_don }}">
+<article class="rounded bg-white p-2 text-sm shadow-sm {% if don.uu_tien %}border-2 border-amber-400{% else %}border border-slate-200{% endif %}{% if don.cho_cu_tho_qua_lau %} nhap-nhay{% endif %}" data-ma-don="{{ don.ma_don }}">
   <div class="flex items-start justify-between gap-1">
     <a href="{% url 'chi_tiet_don' don.ma_don %}" class="font-mono font-semibold underline">{{ don.ma_don }}</a>
     {% if don.trang_thai == "CHO_DUYET_GIA" or don.trang_thai == "DANG_SUA" %}{% nhan_trang_thai don.trang_thai %}{% endif %}
@@ -7,6 +7,8 @@
   <div class="mt-1 flex flex-wrap gap-1">
     {% if don.uu_tien %}<span class="rounded bg-amber-300 px-1.5 text-xs font-semibold">VIP</span>{% endif %}
     {% if don.so_lan_giuc %}<span class="rounded bg-red-600 px-1.5 text-xs font-semibold text-white">Khách giục ×{{ don.so_lan_giuc }}</span>{% endif %}
+    {% if don.cho_cu_tho_qua_lau %}<span class="rounded bg-red-600 px-1.5 text-xs font-semibold text-white">Chờ cử thợ &gt; {{ phut_canh_bao }} phút</span>{% endif %}
+    {% if don.can_cu_lai %}<span class="rounded bg-red-100 px-1.5 text-xs font-semibold text-red-800">Cần cử lại</span>{% endif %}
     {% if don.canh_bao_chua_cu_duoc %}<span class="rounded bg-red-100 px-1.5 text-xs font-semibold text-red-800">Chưa cử được thợ</span>{% endif %}
     {% if don.thieu_thong_tin %}<span class="rounded bg-orange-200 px-1.5 text-xs font-semibold text-orange-900">Thiếu thông tin</span>{% endif %}
     {% if don.cho_tong_dai_xac_nhan_gia %}<span class="rounded bg-yellow-200 px-1.5 text-xs font-semibold">Chờ tổng đài xác nhận giá</span>{% endif %}
@@ -14,6 +16,8 @@
   <p class="mt-1">{{ don.dich_vu_yeu_cau.ten_dich_vu }}</p>
   <p class="text-slate-600">{{ don.dia_chi.khu_vuc }} · {% if don.lich_hieu_luc %}{{ don.lich_hieu_luc.khung_gio }}{% else %}{{ don.khung_gio_mong_muon|default:"chưa có giờ" }}{% endif %}</p>
   {% if don.tho %}<p class="text-slate-600">Thợ: {{ don.tho.ho_ten }}</p>{% endif %}
+  {% if don.de_nghi_dang_cho %}<p class="text-sky-800">Chờ {{ don.de_nghi_dang_cho|length }} thợ trả lời · còn <span data-han="{{ don.han_phan_hoi_gan_nhat|date:'c' }}">…</span></p>{% endif %}
+  {% if don.trang_thai == "CHO_CU_THO" or don.trang_thai == "DA_CO_THO" %}<a href="{% url 'cu_tho' don.ma_don %}" class="mt-1 inline-block font-semibold text-sky-700 underline">{% if don.trang_thai == "CHO_CU_THO" %}Cử thợ{% else %}Điều phối{% endif %}</a>{% endif %}
   <div class="mt-1 flex items-center justify-between text-xs text-slate-500">
     <span>Đã chờ {{ don.ngay_tiep_nhan|timesince }}</span>
     {% if duoc_ghi %}

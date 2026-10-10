@@ -1,0 +1,24 @@
+{% extends bo_cuc %}
+{% block title %}Lịch thợ — HomeFix{% endblock %}
+{% block tieu_de %}Lịch thợ ngày {{ ngay|date:"d/m/Y" }}{% endblock %}
+{% block noi_dung %}
+<form method="get" class="mb-4 flex items-end gap-2">
+  <input type="date" name="ngay" value="{{ ngay|date:'Y-m-d' }}" class="min-h-11 rounded border border-slate-300 px-3" aria-label="Ngày">
+  <button class="min-h-11 rounded border border-slate-300 bg-white px-4">Xem</button>
+</form>
+<div class="overflow-x-auto">
+<table class="border-collapse bg-white text-sm">
+  <thead><tr class="bg-slate-100"><th class="sticky left-0 bg-slate-100 p-2 text-left">Thợ</th>{% for kg in khung %}<th class="p-2">{{ kg }}</th>{% endfor %}</tr></thead>
+  <tbody>
+  {% for h in hang %}
+    <tr class="border-t{% if h.nghi or not h.tho.dang_nhan_viec %} text-slate-400{% endif %}">
+      <td class="sticky left-0 bg-white p-2 whitespace-nowrap">{{ h.tho.ho_ten }}{% if h.nghi %} · nghỉ{% elif not h.tho.dang_nhan_viec %} · tắt nhận việc{% endif %}</td>
+      {% for o in h.o %}
+        <td class="min-w-28 border-l p-1 {% if o %}bg-sky-100{% endif %}">{% for d in o %}<a href="{% url 'chi_tiet_don' d.don__ma_don %}" class="block font-mono text-xs underline">{{ d.don__ma_don }}</a>{% endfor %}</td>
+      {% endfor %}
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}

@@ -155,8 +155,11 @@ class DonSuaChua(MoHinhCoBan):
     @property
     def lich_hieu_luc(self):
         """Lịch hẹn HIEU_LUC (LichHen thuộc app tiep_nhan_dieu_phoi — truy cập qua quan hệ ngược)."""
-        if hasattr(self, "ds_lich_hieu_luc"):  # đã prefetch
+        if hasattr(self, "ds_lich_hieu_luc"):  # đã prefetch riêng lịch hiệu lực
             return self.ds_lich_hieu_luc[0] if self.ds_lich_hieu_luc else None
+        bo_dem = getattr(self, "_prefetched_objects_cache", {})
+        if "ds_lich_hen" in bo_dem:  # đã prefetch toàn bộ lịch
+            return next((lh for lh in bo_dem["ds_lich_hen"] if lh.trang_thai == "HIEU_LUC"), None)
         return self.ds_lich_hen.filter(trang_thai="HIEU_LUC").first()
 
     @property

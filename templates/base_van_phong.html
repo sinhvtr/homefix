@@ -3,7 +3,9 @@
 {% block body %}
 <div class="flex min-h-screen">
   <aside class="w-60 shrink-0 bg-slate-800 text-slate-100 flex flex-col">
-    <div class="px-5 py-4 text-xl font-bold">HomeFix</div>
+    <div class="flex items-center justify-between px-5 py-4 text-xl font-bold">HomeFix
+      <a href="{% url 'thong_bao:danh_sach' %}" class="relative text-base" aria-label="Thông báo ({{ so_thong_bao_chua_doc }} chưa đọc)">🔔{% if so_thong_bao_chua_doc %}<span class="absolute -right-3 -top-2 rounded-full bg-red-600 px-1.5 text-xs">{{ so_thong_bao_chua_doc }}</span>{% endif %}</a>
+    </div>
     <nav class="flex-1 px-2 space-y-1" aria-label="Chức năng">
       {% for nhan, duong_dan in menu %}
         <a href="{{ duong_dan }}" class="block rounded px-3 py-2 hover:bg-slate-700{% if request.path == duong_dan %} bg-slate-700 font-semibold{% endif %}">{{ nhan }}</a>

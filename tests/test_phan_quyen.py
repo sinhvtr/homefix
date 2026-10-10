@@ -70,6 +70,16 @@ MA_TRAN = [
     ("POST", "/don/{ma}/khach-chua-tra-loi/", {QT, TD}),
     ("POST", "/don/{ma}/giuc/", {QT, TD}),
     ("GET", "/don/{ma}/huy/", {QT, TD}),
+    # Phân công, cử thợ (P3): QT, TĐ CRU; GĐ R; KT —; thợ chỉ nhận/từ chối đề nghị của mình (kiểm thử riêng)
+    ("GET", "/don/{ma}/cu-tho/", {QT, TD, GD}),
+    ("POST", "/don/{ma}/cu-tho/", {QT, TD}),
+    ("GET", "/tho-lich/", {QT, TD, GD}),
+    # Màn hình thợ (PWA)
+    ("GET", "/tho/cai-dat/", {THO}),
+    ("POST", "/tho/san-sang/", {THO}),
+    ("POST", "/tho/cai-dat/gui-thu/", {THO}),
+    # Thông báo của chính mình
+    ("GET", "/thong-bao/", MOI),
 ]
 
 CHU_THE = [None, QT, TD, THO, KT, GD]  # None = chưa đăng nhập

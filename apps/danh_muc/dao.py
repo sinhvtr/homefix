@@ -249,6 +249,23 @@ class ThoDAO:
         return tho
 
     @staticmethod
+    def cap_nhat_cua_toi(nguoi_dung, **du_lieu) -> Tho:
+        """Thợ tự sửa phần được phép của hồ sơ mình (SPEC 3.1: kênh thông báo; UC07: “Sẵn sàng nhận việc”)."""
+        kiem_tra_vai_tro(nguoi_dung, VaiTro.THO)
+        duoc_sua = {"dang_nhan_viec", "kenh_thong_bao"}
+        if set(du_lieu) - duoc_sua:
+            raise ValidationError("Không được sửa trường này.")
+        if "kenh_thong_bao" in du_lieu and du_lieu["kenh_thong_bao"] not in Tho.KenhThongBao.values:
+            raise ValidationError({"kenh_thong_bao": "Kênh không hợp lệ."})
+        with transaction.atomic():
+            tho = Tho.objects.select_for_update().get(nguoi_dung=nguoi_dung)
+            truoc = _anh_chup(tho, tuple(du_lieu))
+            _gan(tho, du_lieu)
+            tho.save(update_fields=[*du_lieu, "cap_nhat_luc"])
+            ghi_nhat_ky(nguoi_dung, "THO_CAP_NHAT", tho, truoc, _anh_chup(tho, tuple(du_lieu)))
+        return tho
+
+    @staticmethod
     def cap_lai_pin(nguoi_dung, tho: Tho) -> str:
         return NguoiDungDAO.dat_lai_mat_khau(nguoi_dung, tho.nguoi_dung)
 

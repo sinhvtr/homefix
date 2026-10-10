@@ -12,13 +12,22 @@
   </div>
   <aside class="rounded border border-slate-200 bg-white p-3" aria-label="Việc cần làm">
     <h2 class="mb-2 font-semibold">Việc cần làm</h2>
+    {% for don in bang.can_cu_lai %}
+      <p class="mb-2 text-sm"><strong class="text-red-700">Cần cử lại</strong> — <a href="{% url 'cu_tho' don.ma_don %}" class="underline">{{ don.ma_don }}</a> (hết hạn phản hồi / bị từ chối)</p>
+    {% endfor %}
+    {% for don in bang.hen_gan_chua_co_tho %}
+      <p class="mb-2 text-sm"><strong class="text-red-700">Hẹn trong 2 giờ, chưa có thợ</strong> — <a href="{% url 'cu_tho' don.ma_don %}" class="underline">{{ don.ma_don }}</a> ({{ don.lich_hieu_luc.khung_gio }})</p>
+    {% endfor %}
+    {% for don in bang.bao_gia_cho_xac_nhan %}
+      <p class="mb-2 text-sm"><strong>Báo giá chờ xác nhận</strong> — <a href="{% url 'chi_tiet_don' don.ma_don %}" class="underline">{{ don.ma_don }}</a></p>
+    {% endfor %}
     {% for don, tin in goi_lai %}
       <div class="mb-3 border-b pb-2 text-sm">
         <p><strong>Gọi lại khách</strong> — <a href="{% url 'chi_tiet_don' don.ma_don %}" class="underline">{{ don.ma_don }}</a> (đã nhắc {{ don.so_lan_nhac_xac_nhan }} lần)</p>
         <p>{{ don.khach_hang.ho_ten|default:"(chưa có tên)" }}{% if duoc_ghi %} · <a href="tel:{{ don.khach_hang.so_dien_thoai }}" class="underline">{{ don.khach_hang.so_dien_thoai }}</a>{% endif %}</p>
         {% if duoc_ghi %}<textarea readonly rows="3" class="mt-1 w-full rounded border p-1 text-xs" aria-label="Tin nhắn mẫu">{{ tin }}</textarea>{% endif %}
       </div>
-    {% empty %}<p class="text-sm text-slate-500">Không có việc cần làm.</p>
+    {% empty %}{% if not bang.can_cu_lai and not bang.hen_gan_chua_co_tho and not bang.bao_gia_cho_xac_nhan %}<p class="text-sm text-slate-500">Không có việc cần làm.</p>{% endif %}
     {% endfor %}
   </aside>
 </div>

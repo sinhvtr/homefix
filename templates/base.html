@@ -10,5 +10,20 @@
 </head>
 <body class="{% block body_class %}min-h-screen bg-slate-50 text-slate-900 text-base{% endblock %}" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
   {% block body %}{% endblock %}
+  <script>
+    // Đếm ngược hạn phản hồi (BR02): phần tử có data-han (ISO 8601). Chạy lại sau mỗi lần HTMX thay nội dung.
+    (function () {
+      function capNhat() {
+        document.querySelectorAll("[data-han]").forEach(function (el) {
+          const con = Math.floor((new Date(el.dataset.han) - Date.now()) / 1000);
+          el.textContent = con <= 0 ? "quá hạn" : Math.floor(con / 60) + ":" + String(con % 60).padStart(2, "0");
+          el.classList.toggle("text-red-700", con <= 120);
+        });
+      }
+      capNhat();
+      setInterval(capNhat, 1000);
+      document.body.addEventListener("htmx:afterSwap", capNhat);
+    })();
+  </script>
 </body>
 </html>

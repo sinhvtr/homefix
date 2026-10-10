@@ -1,7 +1,7 @@
 import pytest
 
 from apps.tai_khoan.models import VaiTro
-from tests.conftest import MAT_KHAU_THU
+from tests.conftest import MAT_KHAU_THU, ThoFactory
 
 pytestmark = pytest.mark.django_db
 
@@ -53,14 +53,16 @@ def test_tai_khoan_bi_khoa_khong_dang_nhap_duoc(client, tao_nguoi_dung):
     ],
 )
 def test_chuyen_huong_sau_dang_nhap_theo_vai_tro(client, tao_nguoi_dung, vai_tro, trang_dich):
-    tao_nguoi_dung(so_dien_thoai="0912345678", vai_tro=vai_tro)
+    nguoi = tao_nguoi_dung(so_dien_thoai="0912345678", vai_tro=vai_tro)
+    if vai_tro == VaiTro.THO:
+        ThoFactory(nguoi_dung=nguoi)
     phan_hoi = client.post("/dang-nhap/", {"username": "0912345678", "password": MAT_KHAU_THU}, follow=True)
     assert phan_hoi.redirect_chain[-1][0] == trang_dich
     assert phan_hoi.status_code == 200
 
 
 def test_bo_cuc_tho_va_van_phong(client, tao_nguoi_dung):
-    tho = tao_nguoi_dung(vai_tro=VaiTro.THO)
+    tho = ThoFactory().nguoi_dung
     client.force_login(tho)
     noi_dung = client.get("/tho/").content.decode()
     assert "HomeFix Thợ" in noi_dung and "Điều hướng thợ" in noi_dung

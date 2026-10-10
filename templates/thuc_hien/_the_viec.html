@@ -1,0 +1,5 @@
+<a href="{% url 'thuc_hien:don' d.ma_don %}" class="mb-2 block rounded-lg border border-slate-300 p-3">
+  <span class="block font-semibold">{% if d.lich_hieu_luc %}{{ d.lich_hieu_luc.khung_gio }}{% endif %}</span>
+  <span class="block">{{ d.dich_vu_yeu_cau.ten_dich_vu }} · {{ d.dia_chi.khu_vuc }}</span>
+  <span class="block text-base text-slate-600">{{ d.ma_don }} · {{ d.get_trang_thai_display }}</span>
+</a>

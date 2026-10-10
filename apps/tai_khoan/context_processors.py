@@ -35,6 +35,8 @@ def menu_theo_vai_tro(request):
     if nguoi_dung is None or not nguoi_dung.is_authenticated:
         return {"menu": [], "bo_cuc": "base_van_phong.html"}
     return {
+        # ThongBao thuộc app thong_bao — đếm qua quan hệ ngược, không import
+        "so_thong_bao_chua_doc": nguoi_dung.ds_thong_bao.filter(da_doc=False).count(),
         "menu": MENU.get(nguoi_dung.vai_tro, []),
         "bo_cuc": "base_tho.html" if nguoi_dung.vai_tro == VaiTro.THO else "base_van_phong.html",
     }

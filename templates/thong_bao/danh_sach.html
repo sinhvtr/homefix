@@ -1,0 +1,19 @@
+{% extends bo_cuc %}
+{% block title %}Thông báo — HomeFix{% endblock %}
+{% block tieu_de %}Thông báo{% endblock %}
+{% block noi_dung %}
+<ul class="max-w-3xl divide-y rounded bg-white">
+  {% for tb in ds %}
+    <li class="p-3{% if not tb.da_doc %} bg-sky-50{% endif %}">
+      <form method="post" action="{% url 'thong_bao:mo' tb.pk %}">{% csrf_token %}
+        <button class="w-full text-left">
+          <span class="font-semibold">{{ tb.tieu_de }}</span>
+          <span class="block text-sm text-slate-600">{{ tb.noi_dung }}</span>
+          <span class="block text-xs text-slate-500">{{ tb.tao_luc }}</span>
+        </button>
+      </form>
+    </li>
+  {% empty %}<li class="p-3 text-slate-500">Chưa có thông báo.</li>
+  {% endfor %}
+</ul>
+{% endblock %}

@@ -86,6 +86,13 @@ def bam_mat_khau_nhanh(settings):
 
 
 @pytest.fixture(autouse=True)
+def thong_bao_dong_bo(settings):
+    """Kiểm thử: thông báo gửi đồng bộ ngay sau commit qua ConsoleKenh (không gọi mạng, không cần worker)."""
+    settings.THONG_BAO_DONG_BO = True
+    settings.THONG_BAO_CHI_CONSOLE = True
+
+
+@pytest.fixture(autouse=True)
 def xoa_bo_dem():
     cache.clear()
     yield
@@ -175,3 +182,19 @@ def tao_lich(don, ngay_gio=None, gio=2, trang_thai="HIEU_LUC"):
         trang_thai=trang_thai,
         nguoi_tao=don.nguoi_tao,
     )
+
+
+def tao_tho_phu_hop(dich_vu, khu_vuc=None, **kw):
+    """Thợ đang hoạt động, có kỹ năng đúng dịch vụ (và phụ trách khu vực nếu truyền vào)."""
+    tho = ThoFactory(**kw)
+    tho.ky_nang.add(dich_vu)
+    if khu_vuc is not None:
+        tho.khu_vuc_phu_trach.add(khu_vuc)
+    return tho
+
+
+def don_cho_cu_tho(ngay_gio=None, **kw):
+    """Đơn CHO_CU_THO có lịch hiệu lực (tiền điều kiện UC04)."""
+    don = tao_don("CHO_CU_THO", **kw)
+    don.lich = tao_lich(don, ngay_gio=ngay_gio)
+    return don

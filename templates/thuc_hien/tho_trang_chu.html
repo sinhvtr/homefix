@@ -1,0 +1,36 @@
+{% extends "base_tho.html" %}
+{% load dinh_dang %}
+{% block title %}Việc của tôi — HomeFix Thợ{% endblock %}
+{% block tieu_de %}Việc của tôi{% endblock %}
+{% block noi_dung %}
+<form method="post" action="{% url 'thuc_hien:san_sang' %}" class="mb-4">
+  {% csrf_token %}
+  <button class="flex min-h-14 w-full items-center justify-between rounded-lg border-2 px-4 {% if tho.dang_nhan_viec %}border-green-600 bg-green-50{% else %}border-slate-300 bg-slate-100{% endif %}" aria-pressed="{{ tho.dang_nhan_viec|yesno:'true,false' }}">
+    <span class="font-semibold">Sẵn sàng nhận việc</span>
+    <span class="rounded-full px-3 py-1 text-base font-bold {% if tho.dang_nhan_viec %}bg-green-600 text-white{% else %}bg-slate-400 text-white{% endif %}">{{ tho.dang_nhan_viec|yesno:"BẬT,TẮT" }}</span>
+  </button>
+</form>
+
+<section id="de-nghi" class="mb-6">
+  <h2 class="mb-2 text-lg font-bold">Đề nghị đang chờ ({{ de_nghi|length }})</h2>
+  {% for pc in de_nghi %}
+    <a href="{% url 'thuc_hien:de_nghi' pc.pk %}" class="mb-2 block rounded-lg border-2 border-sky-600 bg-sky-50 p-3">
+      <span class="block font-semibold">{{ pc.don.dich_vu_yeu_cau.ten_dich_vu }}</span>
+      <span class="block">{{ pc.don.dia_chi.khu_vuc }} · {% if pc.don.lich_hieu_luc %}{{ pc.don.lich_hieu_luc.khung_gio }}{% endif %}</span>
+      <span class="block">Công dự kiến <strong>{{ pc.tien_cong_du_kien|tien }}</strong></span>
+      <span class="block text-base">{% if pc.trang_thai == "QUA_HAN" %}Đã quá hạn — vẫn nhận được{% else %}Còn <span data-han="{{ pc.han_phan_hoi|date:'c' }}">…</span>{% endif %}</span>
+    </a>
+  {% empty %}<p class="text-slate-500">Chưa có đề nghị.</p>
+  {% endfor %}
+</section>
+
+<section class="mb-6">
+  <h2 class="mb-2 text-lg font-bold">Việc hôm nay ({{ hom_nay|length }})</h2>
+  {% for d in hom_nay %}{% include "thuc_hien/_the_viec.html" %}{% empty %}<p class="text-slate-500">Không có việc.</p>{% endfor %}
+</section>
+
+<section>
+  <h2 class="mb-2 text-lg font-bold">Việc sắp tới ({{ sap_toi|length }})</h2>
+  {% for d in sap_toi %}{% include "thuc_hien/_the_viec.html" %}{% empty %}<p class="text-slate-500">Không có việc.</p>{% endfor %}
+</section>
+{% endblock %}

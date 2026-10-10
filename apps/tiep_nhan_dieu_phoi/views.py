@@ -12,6 +12,7 @@ from apps.don_sua_chua.dao import GHI_DON, XEM_BANG_DON, XEM_DON, DonSuaChuaDAO,
 from apps.don_sua_chua.models import DonSuaChua
 from apps.don_sua_chua.trang_thai import ChuyenTrangThaiKhongHopLe, TrangThaiDon
 from apps.he_thong.bieu_mau import gan_loi_vao_form
+from apps.he_thong.cau_hinh import cau_hinh
 from apps.tai_khoan.phan_quyen import co_vai_tro, yeu_cau_vai_tro
 
 from .dao import DUOC_DOI_HEN, LichHenDAO, TiepNhanDAO
@@ -50,6 +51,7 @@ def bang_don(request):
         "form_loc": form_loc,
         "duoc_ghi": co_vai_tro(request.user, *GHI_DON),  # giám đốc xem chỉ đọc
         "goi_lai": [(d, tin_nhan_goi_lai(d)) for d in bang.goi_lai_khach],
+        "phut_canh_bao": cau_hinh("CANH_BAO_CHO_CU_THO_PHUT"),
     }
     if request.htmx:  # tự làm mới mỗi 30 giây: chỉ trả phần bảng
         return render(request, "tiep_nhan/_bang_don_noi_dung.html", ngu_canh)

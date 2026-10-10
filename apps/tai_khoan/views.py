@@ -17,7 +17,7 @@ from .phan_quyen import CHI_QUAN_TRI, QUAN_TRI_GIAM_DOC, co_vai_tro, yeu_cau_vai
 TRANG_DICH_THEO_VAI_TRO = {
     VaiTro.QUAN_TRI: "tong_dai",
     VaiTro.TONG_DAI: "tong_dai",
-    VaiTro.THO: "tho_trang_chu",
+    VaiTro.THO: "thuc_hien:trang_chu",
     VaiTro.KE_TOAN: "ke_toan_doi_soat",
     VaiTro.GIAM_DOC: "bao_cao",
 }

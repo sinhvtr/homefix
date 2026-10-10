@@ -1,0 +1,39 @@
+{% extends bo_cuc %}
+{% load dinh_dang %}
+{% block title %}Dịch vụ, bảng giá — HomeFix{% endblock %}
+{% block tieu_de %}Dịch vụ, bảng giá{% endblock %}
+{% block noi_dung %}
+<form method="get" class="mb-4 flex flex-wrap items-end gap-2">
+  <input type="search" name="q" value="{{ q }}" placeholder="Tìm tên hoặc mã" class="min-h-11 rounded border border-slate-300 px-3">
+  <select name="loai" class="min-h-11 rounded border border-slate-300 px-3">
+    <option value="">Mọi loại thiết bị</option>
+    {% for ma, nhan in ds_loai %}<option value="{{ ma }}"{% if ma == loai %} selected{% endif %}>{{ nhan }}</option>{% endfor %}
+  </select>
+  <button class="min-h-11 rounded border border-slate-300 px-4">Lọc</button>
+  {% if duoc_sua %}
+    <a href="{% url 'danh_muc:dich_vu_moi' %}" class="inline-flex min-h-11 items-center rounded bg-sky-700 px-4 font-semibold text-white">+ Thêm dịch vụ</a>
+    <a href="{% url 'danh_muc:dich_vu_nhap' %}" class="inline-flex min-h-11 items-center rounded border border-slate-300 px-4">Nhập Excel</a>
+  {% endif %}
+</form>
+<div class="overflow-x-auto">
+<table class="w-full border-collapse bg-white text-left">
+  <thead><tr class="border-b bg-slate-100"><th class="p-2">Mã</th><th class="p-2">Tên dịch vụ</th><th class="p-2">Nhóm</th><th class="p-2">Thiết bị</th><th class="p-2 text-right">Đơn giá</th><th class="p-2">ĐVT</th><th class="p-2">Bảo hành</th><th class="p-2">Áp dụng</th>{% if duoc_sua %}<th class="p-2"></th>{% endif %}</tr></thead>
+  <tbody>
+  {% for dv in ds %}
+    <tr class="border-b{% if not dv.dang_ap_dung %} text-slate-400{% endif %}">
+      <td class="p-2 font-mono">{{ dv.ma }}</td><td class="p-2">{{ dv.ten_dich_vu }}</td><td class="p-2">{{ dv.get_nhom_dich_vu_display }}</td>
+      <td class="p-2">{{ dv.get_loai_thiet_bi_display }}</td>
+      <td class="p-2 text-right whitespace-nowrap">{% if dv.nhom_dich_vu == "SUA_CHUA_THAY_VAT_TU" %}từ {% endif %}{{ dv.don_gia_tham_khao|tien }}</td>
+      <td class="p-2">{{ dv.don_vi_tinh }}</td><td class="p-2">{{ dv.thoi_han_bao_hanh_ngay }} ngày</td>
+      <td class="p-2">{{ dv.dang_ap_dung|yesno:"Có,Ngừng" }}</td>
+      {% if duoc_sua %}<td class="p-2 whitespace-nowrap">
+        <a href="{% url 'danh_muc:dich_vu_sua' dv.pk %}" class="underline">Sửa</a>
+        {% url 'danh_muc:dich_vu_xoa' dv.pk as url_xoa %}{% include "chung/_nut_post.html" with url=url_xoa nhan="Xóa" nguy_hiem=True xac_nhan="Xóa dịch vụ này? Dịch vụ đã dùng chỉ có thể ngừng áp dụng." %}
+      </td>{% endif %}
+    </tr>
+  {% empty %}<tr><td class="p-2" colspan="9">Không có dịch vụ.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}

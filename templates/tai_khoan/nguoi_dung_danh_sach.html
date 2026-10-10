@@ -1,0 +1,29 @@
+{% extends bo_cuc %}
+{% block title %}Người dùng — HomeFix{% endblock %}
+{% block tieu_de %}Người dùng{% endblock %}
+{% block noi_dung %}
+<form method="get" class="mb-4 flex flex-wrap items-end gap-2">
+  <input type="search" name="q" value="{{ q }}" placeholder="Tìm tên hoặc SĐT" class="min-h-11 rounded border border-slate-300 px-3">
+  <button class="min-h-11 rounded border border-slate-300 px-4">Tìm</button>
+  {% if duoc_sua %}<a href="{% url 'tai_khoan:nguoi_dung_moi' %}" class="inline-flex min-h-11 items-center rounded bg-sky-700 px-4 font-semibold text-white">+ Thêm người dùng</a>{% endif %}
+</form>
+<p class="mb-2 text-sm text-slate-600">Tài khoản thợ được tạo ở Danh mục → Thợ. Không xóa tài khoản, chỉ khóa.</p>
+<table class="w-full max-w-5xl border-collapse bg-white text-left">
+  <thead><tr class="border-b bg-slate-100"><th class="p-2">Họ tên</th><th class="p-2">Tên đăng nhập</th><th class="p-2">Vai trò</th><th class="p-2">Trạng thái</th>{% if duoc_sua %}<th class="p-2"></th>{% endif %}</tr></thead>
+  <tbody>
+  {% for nd in ds %}
+    <tr class="border-b{% if not nd.is_active %} text-slate-400{% endif %}">
+      <td class="p-2">{{ nd.ho_ten }}</td><td class="p-2 font-mono">{{ nd.username }}</td><td class="p-2">{{ nd.get_vai_tro_display }}</td>
+      <td class="p-2">{{ nd.is_active|yesno:"Hoạt động,Đã khóa" }}{% if nd.phai_doi_mat_khau %} · chờ đổi mật khẩu{% endif %}</td>
+      {% if duoc_sua %}<td class="p-2 whitespace-nowrap">
+        <a href="{% url 'tai_khoan:nguoi_dung_sua' nd.pk %}" class="underline">Sửa</a>
+        {% if nd.pk != user.pk %}
+          {% url 'tai_khoan:nguoi_dung_khoa' nd.pk as url_khoa %}{% include "chung/_nut_post.html" with url=url_khoa nhan=nd.is_active|yesno:"Khóa,Mở khóa" nguy_hiem=nd.is_active %}
+          {% url 'tai_khoan:nguoi_dung_dat_lai_mat_khau' nd.pk as url_dl %}{% include "chung/_nut_post.html" with url=url_dl nhan="Đặt lại mật khẩu" xac_nhan="Cấp mật khẩu/PIN mới cho người này?" %}
+        {% endif %}
+      </td>{% endif %}
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

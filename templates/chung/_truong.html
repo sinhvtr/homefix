@@ -1,0 +1,19 @@
+{% if truong.is_hidden %}{{ truong }}{% else %}
+<div>
+  {% if truong.widget_type == "checkbox" %}
+    <label class="flex items-center gap-2 font-medium">{{ truong }} {{ truong.label }}</label>
+  {% elif truong.widget_type == "checkboxselectmultiple" %}
+    <fieldset>
+      <legend class="mb-1 block font-medium">{{ truong.label }}</legend>
+      <div class="max-h-72 overflow-y-auto rounded border border-slate-300 p-3 [&_ul]:space-y-1 [&_label]:flex [&_label]:items-center [&_label]:gap-2 [&_div>div]:mb-2 [&_div>div>label]:font-semibold">
+        {{ truong }}
+      </div>
+    </fieldset>
+  {% else %}
+    <label for="{{ truong.id_for_label }}" class="mb-1 block font-medium">{{ truong.label }}{% if truong.field.required %} <span class="text-red-700">*</span>{% endif %}</label>
+    {{ truong }}
+  {% endif %}
+  {% if truong.help_text %}<p class="mt-1 text-sm text-slate-500">{{ truong.help_text }}</p>{% endif %}
+  {% for loi in truong.errors %}<p class="mt-1 text-sm text-red-700">{{ loi }}</p>{% endfor %}
+</div>
+{% endif %}

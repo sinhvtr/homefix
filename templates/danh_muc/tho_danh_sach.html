@@ -1,0 +1,31 @@
+{% extends bo_cuc %}
+{% block title %}Thợ — HomeFix{% endblock %}
+{% block tieu_de %}Thợ{% endblock %}
+{% block noi_dung %}
+<form method="get" class="mb-4 flex flex-wrap items-end gap-2">
+  <input type="search" name="q" value="{{ q }}" placeholder="Tìm tên hoặc SĐT" class="min-h-11 rounded border border-slate-300 px-3">
+  <button class="min-h-11 rounded border border-slate-300 px-4">Tìm</button>
+  {% if duoc_sua %}
+    <a href="{% url 'danh_muc:tho_moi' %}" class="inline-flex min-h-11 items-center rounded bg-sky-700 px-4 font-semibold text-white">+ Thêm thợ</a>
+    <a href="{% url 'danh_muc:tho_nhap' %}" class="inline-flex min-h-11 items-center rounded border border-slate-300 px-4">Nhập Excel</a>
+  {% endif %}
+</form>
+<div class="overflow-x-auto">
+<table class="w-full border-collapse bg-white text-left">
+  <thead><tr class="border-b bg-slate-100"><th class="p-2">Mã</th><th class="p-2">Họ tên</th><th class="p-2">SĐT</th><th class="p-2">Hình thức</th><th class="p-2">Kỹ năng</th><th class="p-2">Khu vực</th><th class="p-2">Trạng thái</th></tr></thead>
+  <tbody>
+  {% for tho in ds %}
+    <tr class="border-b{% if not tho.nguoi_dung.is_active %} text-slate-400{% endif %}">
+      <td class="p-2 font-mono">{{ tho.ma_tho }}</td>
+      <td class="p-2"><a href="{% url 'danh_muc:tho_chi_tiet' tho.pk %}" class="underline">{{ tho.ho_ten }}</a></td>
+      <td class="p-2">{{ tho.so_dien_thoai }}</td><td class="p-2">{{ tho.get_hinh_thuc_display }}</td>
+      <td class="p-2 text-sm">{{ tho.ky_nang.all|length }} dịch vụ</td>
+      <td class="p-2 text-sm">{% for kv in tho.khu_vuc_phu_trach.all %}{{ kv.ten }}{% if not forloop.last %}, {% endif %}{% endfor %}</td>
+      <td class="p-2 text-sm">{% if not tho.nguoi_dung.is_active %}Đã khóa{% elif tho.nghi_den and tho.nghi_den > bay_gio %}Nghỉ đến {{ tho.nghi_den }}{% elif not tho.dang_nhan_viec %}Tắt nhận việc{% else %}Sẵn sàng{% endif %}</td>
+    </tr>
+  {% empty %}<tr><td class="p-2" colspan="7">Không có thợ.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}

@@ -19,6 +19,8 @@ class NguoiDung(AbstractUser, MoHinhCoBan):
     ho_ten = models.CharField("họ tên", max_length=100)
     so_dien_thoai = models.CharField("số điện thoại", max_length=10, unique=True)
     vai_tro = models.CharField("vai trò", max_length=10, choices=VaiTro.choices)
+    # Bắt buộc đổi mật khẩu/PIN ở lần đăng nhập kế tiếp (cấp mới hoặc đặt lại) — UC01, A-30.
+    phai_doi_mat_khau = models.BooleanField("phải đổi mật khẩu", default=False)
 
     REQUIRED_FIELDS = ["ho_ten", "so_dien_thoai", "vai_tro"]
 

@@ -12,6 +12,7 @@
     <div class="px-5 py-4 border-t border-slate-700 text-sm">
       <div class="font-semibold">{{ user.ho_ten }}</div>
       <div class="text-slate-400">{{ user.get_vai_tro_display }}</div>
+      <a href="{% url 'tai_khoan:doi_mat_khau' %}" class="mt-2 block underline text-slate-300 hover:text-white">Đổi mật khẩu</a>
       <form method="post" action="{% url 'tai_khoan:dang_xuat' %}" class="mt-2">
         {% csrf_token %}
         <button type="submit" class="underline text-slate-300 hover:text-white">Đăng xuất</button>

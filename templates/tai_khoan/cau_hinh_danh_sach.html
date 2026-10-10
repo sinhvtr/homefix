@@ -1,0 +1,17 @@
+{% extends bo_cuc %}
+{% block title %}Cấu hình — HomeFix{% endblock %}
+{% block tieu_de %}Cấu hình nghiệp vụ{% endblock %}
+{% block noi_dung %}
+<p class="mb-2 text-sm text-slate-600">Thay đổi có hiệu lực trong tối đa 60 giây và được ghi nhật ký.</p>
+<table class="w-full max-w-6xl border-collapse bg-white text-left">
+  <thead><tr class="border-b bg-slate-100"><th class="p-2">Khóa</th><th class="p-2">Giá trị</th><th class="p-2">Mô tả</th>{% if duoc_sua %}<th class="p-2"></th>{% endif %}</tr></thead>
+  <tbody>
+  {% for ch in ds %}
+    <tr class="border-b align-top">
+      <td class="p-2 font-mono text-sm">{{ ch.khoa }}</td><td class="p-2 break-all">{{ ch.gia_tri }}</td><td class="p-2 text-sm">{{ ch.mo_ta }}</td>
+      {% if duoc_sua %}<td class="p-2"><a href="{% url 'tai_khoan:cau_hinh_sua' ch.pk %}" class="underline">Sửa</a></td>{% endif %}
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Tạm khóa đăng nhập — HomeFix{% endblock %}
+{% block body %}
+<main class="flex min-h-screen items-center justify-center px-4">
+  <div class="w-full max-w-sm space-y-4 rounded-lg bg-white p-6 shadow" role="alert">
+    <h1 class="text-2xl font-bold">Tạm khóa đăng nhập</h1>
+    <p>Tài khoản đã nhập sai 5 lần liên tiếp nên bị tạm khóa 15 phút. Vui lòng thử lại sau hoặc liên hệ quản trị.</p>
+    <p><a href="/dang-nhap/" class="underline">Về trang đăng nhập</a></p>
+  </div>
+</main>
+{% endblock %}

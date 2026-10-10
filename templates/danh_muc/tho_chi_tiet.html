@@ -1,0 +1,24 @@
+{% extends bo_cuc %}
+{% block title %}{{ tho.ho_ten }} — HomeFix{% endblock %}
+{% block tieu_de %}Thợ {{ tho.ho_ten }} <span class="font-mono text-base text-slate-500">{{ tho.ma_tho }}</span>{% endblock %}
+{% block noi_dung %}
+<dl class="grid max-w-3xl grid-cols-[12rem_1fr] gap-x-4 gap-y-2 bg-white p-4">
+  <dt class="font-medium">Số điện thoại</dt><dd>{{ tho.so_dien_thoai }}</dd>
+  <dt class="font-medium">Hình thức</dt><dd>{{ tho.get_hinh_thuc_display }}</dd>
+  <dt class="font-medium">Tài khoản</dt><dd>{{ tho.nguoi_dung.is_active|yesno:"Đang hoạt động,Đã khóa" }}{% if tho.nguoi_dung.phai_doi_mat_khau %} · chưa đổi PIN lần đầu{% endif %}</dd>
+  <dt class="font-medium">Sẵn sàng nhận việc</dt><dd>{{ tho.dang_nhan_viec|yesno:"Có,Không" }}</dd>
+  <dt class="font-medium">Nghỉ đến</dt><dd>{{ tho.nghi_den|default:"—" }}</dd>
+  <dt class="font-medium">Kênh thông báo</dt><dd>{{ tho.get_kenh_thong_bao_display }}</dd>
+  <dt class="font-medium">Khu vực phụ trách</dt><dd>{% for kv in tho.khu_vuc_phu_trach.all %}{{ kv.ten }}{% if not forloop.last %}, {% endif %}{% empty %}—{% endfor %}</dd>
+  <dt class="font-medium">Kỹ năng</dt><dd><ul class="list-disc pl-5">{% for dv in tho.ky_nang.all %}<li>{{ dv.ten_dich_vu }} <span class="font-mono text-sm text-slate-500">{{ dv.ma }}</span></li>{% empty %}<li>Chưa có</li>{% endfor %}</ul></dd>
+  <dt class="font-medium">Ghi chú</dt><dd>{{ tho.ghi_chu|linebreaksbr|default:"—" }}</dd>
+</dl>
+<div class="mt-4 flex flex-wrap items-center gap-3">
+  <a href="{% url 'danh_muc:tho_danh_sach' %}" class="underline">← Danh sách thợ</a>
+  {% if duoc_sua %}
+    <a href="{% url 'danh_muc:tho_sua' tho.pk %}" class="inline-flex min-h-11 items-center rounded bg-sky-700 px-4 font-semibold text-white">Sửa</a>
+    {% url 'danh_muc:tho_cap_pin' tho.pk as url_pin %}{% include "chung/_nut_post.html" with url=url_pin nhan="Cấp lại PIN" xac_nhan="Cấp PIN mới? PIN cũ sẽ hết hiệu lực." %}
+    {% url 'danh_muc:tho_khoa' tho.pk as url_khoa %}{% if tho.nguoi_dung.is_active %}{% include "chung/_nut_post.html" with url=url_khoa nhan="Khóa tài khoản" nguy_hiem=True xac_nhan="Khóa tài khoản thợ này?" %}{% else %}{% include "chung/_nut_post.html" with url=url_khoa nhan="Mở khóa" %}{% endif %}
+  {% endif %}
+</div>
+{% endblock %}

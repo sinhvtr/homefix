@@ -44,6 +44,8 @@ extend-exclude = ["**/migrations/*.py"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "UP", "DJ", "SIM"]
+# Độ dài dòng do `ruff format` lo; chuỗi tiếng Việt dài không ngắt được nên bỏ E501.
+ignore = ["E501"]
 
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "config.settings.dev"

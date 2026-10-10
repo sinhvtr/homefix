@@ -1,0 +1,45 @@
+{% extends bo_cuc %}
+{% load dinh_dang %}
+{% block title %}{{ kh }} — HomeFix{% endblock %}
+{% block tieu_de %}{{ kh.ho_ten|default:"(chưa có tên)" }}{% if kh.la_vip %} <span class="rounded bg-amber-300 px-2 py-0.5 text-base font-semibold">VIP</span>{% endif %}{% endblock %}
+{% block noi_dung %}
+<dl class="grid max-w-3xl grid-cols-[12rem_1fr] gap-x-4 gap-y-2 bg-white p-4">
+  <dt class="font-medium">Số điện thoại</dt><dd class="font-mono">{% if duoc_ghi %}{{ kh.so_dien_thoai }}{% else %}{{ kh.so_dien_thoai|an_sdt }}{% endif %}</dd>
+  <dt class="font-medium">Số phụ</dt><dd class="font-mono">{% if duoc_ghi %}{{ kh.so_dien_thoai_phu|default:"—" }}{% else %}{{ kh.so_dien_thoai_phu|an_sdt|default:"—" }}{% endif %}</dd>
+  <dt class="font-medium">Loại khách</dt><dd>{{ kh.get_loai_khach_display }}{% if kh.vip_thu_cong %} (thủ công: {{ kh.ly_do_vip }}){% endif %}</dd>
+  <dt class="font-medium">Ghi chú</dt><dd>{{ kh.ghi_chu|linebreaksbr|default:"—" }}</dd>
+</dl>
+<div class="mt-3 flex flex-wrap items-center gap-3">
+  <a href="{% url 'danh_muc:khach_hang_danh_sach' %}" class="underline">← Danh sách khách hàng</a>
+  {% if duoc_ghi %}<a href="{% url 'danh_muc:khach_hang_sua' kh.pk %}" class="inline-flex min-h-11 items-center rounded bg-sky-700 px-4 font-semibold text-white">Sửa</a>
+  <a href="{% url 'danh_muc:dia_chi_moi' kh.pk %}" class="inline-flex min-h-11 items-center rounded border border-slate-300 px-4">+ Thêm địa chỉ</a>{% endif %}
+  {% if duoc_xoa %}{% url 'danh_muc:khach_hang_xoa' kh.pk as url_xoa %}{% include "chung/_nut_post.html" with url=url_xoa nhan="Xóa khách hàng" nguy_hiem=True xac_nhan="Xóa khách hàng cùng mọi địa chỉ, thiết bị?" %}{% endif %}
+</div>
+
+<h2 class="mt-6 mb-2 text-xl font-bold">Địa chỉ và thiết bị</h2>
+{% for dc in kh.ds_dia_chi.all %}
+  <section class="mb-4 max-w-4xl rounded border border-slate-200 bg-white p-4">
+    <div class="flex flex-wrap items-start justify-between gap-2">
+      <div>
+        <p class="font-semibold">{{ dc.dia_chi_chi_tiet }} {% if dc.la_mac_dinh %}<span class="rounded bg-slate-200 px-2 text-sm">Mặc định</span>{% endif %}</p>
+        <p class="text-sm text-slate-600">Khu vực: {{ dc.khu_vuc }}{% if dc.ghi_chu_duong_di %} · Đường đi: {{ dc.ghi_chu_duong_di }}{% endif %}</p>
+      </div>
+      <div class="flex flex-wrap items-center gap-2 text-sm">
+        {% if duoc_ghi %}<a href="{% url 'danh_muc:dia_chi_sua' dc.pk %}" class="underline">Sửa địa chỉ</a>
+        <a href="{% url 'danh_muc:thiet_bi_moi' dc.pk %}" class="underline">+ Thiết bị</a>{% endif %}
+        {% if duoc_xoa %}{% url 'danh_muc:dia_chi_xoa' dc.pk as url_xoa %}{% include "chung/_nut_post.html" with url=url_xoa nhan="Xóa" nguy_hiem=True xac_nhan="Xóa địa chỉ cùng thiết bị?" %}{% endif %}
+      </div>
+    </div>
+    <ul class="mt-2 space-y-1">
+      {% for tb in dc.ds_thiet_bi.all %}
+        <li class="flex flex-wrap items-center gap-2">• {{ tb }}{% if tb.ghi_chu %} — {{ tb.ghi_chu }}{% endif %}
+          {% if duoc_ghi %}<a href="{% url 'danh_muc:thiet_bi_sua' tb.pk %}" class="text-sm underline">Sửa</a>{% endif %}
+          {% if duoc_xoa %}{% url 'danh_muc:thiet_bi_xoa' tb.pk as url_xoa %}{% include "chung/_nut_post.html" with url=url_xoa nhan="Xóa" nguy_hiem=True xac_nhan="Xóa thiết bị?" %}{% endif %}
+        </li>
+      {% empty %}<li class="text-sm text-slate-500">Chưa có thiết bị.</li>
+      {% endfor %}
+    </ul>
+  </section>
+{% empty %}<p class="text-slate-500">Chưa có địa chỉ.</p>
+{% endfor %}
+{% endblock %}

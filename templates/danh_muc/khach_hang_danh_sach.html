@@ -1,0 +1,26 @@
+{% extends bo_cuc %}
+{% load dinh_dang %}
+{% block title %}Khách hàng — HomeFix{% endblock %}
+{% block tieu_de %}Khách hàng{% endblock %}
+{% block noi_dung %}
+<form method="get" class="mb-4 flex flex-wrap items-end gap-2">
+  <input type="search" name="q" value="{{ q }}" placeholder="Tìm tên hoặc số điện thoại" class="min-h-11 w-72 rounded border border-slate-300 px-3">
+  <button class="min-h-11 rounded border border-slate-300 px-4">Tìm</button>
+  {% if duoc_ghi %}<a href="{% url 'danh_muc:khach_hang_moi' %}" class="inline-flex min-h-11 items-center rounded bg-sky-700 px-4 font-semibold text-white">+ Thêm khách hàng</a>{% endif %}
+</form>
+<table class="w-full max-w-5xl border-collapse bg-white text-left">
+  <thead><tr class="border-b bg-slate-100"><th class="p-2">Họ tên</th><th class="p-2">Số điện thoại</th><th class="p-2">Loại</th><th class="p-2">Số địa chỉ</th></tr></thead>
+  <tbody>
+  {% for kh in ds %}
+    <tr class="border-b">
+      <td class="p-2"><a href="{% url 'danh_muc:khach_hang_chi_tiet' kh.pk %}" class="underline">{{ kh.ho_ten|default:"(chưa có tên)" }}</a></td>
+      {# OI-05: vai trò không cần gọi khách (kế toán, giám đốc) chỉ thấy số đã ẩn bớt #}
+      <td class="p-2 font-mono">{% if duoc_ghi %}{{ kh.so_dien_thoai }}{% else %}{{ kh.so_dien_thoai|an_sdt }}{% endif %}</td>
+      <td class="p-2">{% if kh.la_vip %}<span class="rounded bg-amber-300 px-2 py-0.5 text-sm font-semibold">VIP</span>{% else %}Thường{% endif %}</td>
+      <td class="p-2">{{ kh.so_dia_chi }}</td>
+    </tr>
+  {% empty %}<tr><td class="p-2" colspan="4">Không tìm thấy khách hàng.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

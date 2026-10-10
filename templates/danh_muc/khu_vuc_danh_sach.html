@@ -1,0 +1,21 @@
+{% extends bo_cuc %}
+{% block title %}Khu vực — HomeFix{% endblock %}
+{% block tieu_de %}Khu vực{% endblock %}
+{% block noi_dung %}
+{% if duoc_sua %}<p class="mb-4"><a href="{% url 'danh_muc:khu_vuc_moi' %}" class="inline-flex min-h-11 items-center rounded bg-sky-700 px-4 font-semibold text-white">+ Thêm khu vực</a></p>{% endif %}
+<table class="w-full max-w-4xl border-collapse bg-white text-left">
+  <thead><tr class="border-b bg-slate-100"><th class="p-2">Mã</th><th class="p-2">Tên</th><th class="p-2">Số thợ phụ trách</th><th class="p-2">Ghi chú</th>{% if duoc_sua %}<th class="p-2"></th>{% endif %}</tr></thead>
+  <tbody>
+  {% for kv in ds %}
+    <tr class="border-b">
+      <td class="p-2 font-mono">{{ kv.ma }}</td><td class="p-2">{{ kv.ten }}</td><td class="p-2">{{ kv.so_tho }}</td><td class="p-2">{{ kv.ghi_chu }}</td>
+      {% if duoc_sua %}<td class="p-2 whitespace-nowrap">
+        <a href="{% url 'danh_muc:khu_vuc_sua' kv.pk %}" class="underline">Sửa</a>
+        {% url 'danh_muc:khu_vuc_xoa' kv.pk as url_xoa %}{% include "chung/_nut_post.html" with url=url_xoa nhan="Xóa" nguy_hiem=True xac_nhan="Xóa khu vực này?" %}
+      </td>{% endif %}
+    </tr>
+  {% empty %}<tr><td class="p-2" colspan="5">Chưa có khu vực.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

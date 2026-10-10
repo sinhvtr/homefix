@@ -1,0 +1,40 @@
+{% extends bo_cuc %}
+{% block title %}{{ tieu_de }} — HomeFix{% endblock %}
+{% block tieu_de %}{{ tieu_de }}{% endblock %}
+{% block noi_dung %}
+<ol class="mb-4 list-decimal space-y-1 pl-6">
+  <li><a href="{{ url_mau }}" class="underline">Tải tệp mẫu (.xlsx)</a> — trang “Hướng dẫn” trong tệp liệt kê các mã hợp lệ.</li>
+  <li>Điền dữ liệu từ dòng 2, giữ nguyên dòng tiêu đề.</li>
+  <li>Tải lên. Nếu có dòng lỗi, hệ thống <strong>không nhập dòng nào</strong> và báo lỗi theo số dòng để sửa.</li>
+</ol>
+
+{% if ket_qua and ket_qua.loi %}
+  <div class="mb-4 max-w-4xl rounded border border-red-300 bg-red-50 p-4" role="alert">
+    <p class="mb-2 font-semibold text-red-800">Chưa nhập — {{ ket_qua.loi|length }} dòng lỗi:</p>
+    <table class="w-full text-left text-sm">
+      <thead><tr><th class="p-1">Dòng</th><th class="p-1">Lỗi</th></tr></thead>
+      <tbody>{% for dong, loi in ket_qua.loi %}<tr class="border-t border-red-200"><td class="p-1 font-mono">{% if dong %}{{ dong }}{% else %}—{% endif %}</td><td class="p-1">{{ loi }}</td></tr>{% endfor %}</tbody>
+    </table>
+  </div>
+{% endif %}
+
+{% if ket_qua and ket_qua.ds_pin %}
+  <div class="mb-4 max-w-4xl rounded border border-amber-300 bg-amber-50 p-4">
+    <p class="mb-2 font-semibold">PIN của thợ vừa nhập — chỉ hiện một lần, hãy báo trực tiếp cho từng thợ. Thợ phải đổi PIN ở lần đăng nhập đầu.</p>
+    <table class="w-full text-left">
+      <thead><tr><th class="p-1">Họ tên</th><th class="p-1">Số điện thoại</th><th class="p-1">PIN</th></tr></thead>
+      <tbody>{% for ho_ten, sdt, pin in ket_qua.ds_pin %}<tr class="border-t"><td class="p-1">{{ ho_ten }}</td><td class="p-1 font-mono">{{ sdt }}</td><td class="p-1 font-mono">{{ pin }}</td></tr>{% endfor %}</tbody>
+    </table>
+    <p class="mt-2"><a href="{{ url_danh_sach }}" class="underline">Về danh sách</a></p>
+  </div>
+{% endif %}
+
+<form method="post" enctype="multipart/form-data" class="max-w-xl space-y-4">
+  {% csrf_token %}
+  {% for truong in form %}{% include "chung/_truong.html" %}{% endfor %}
+  <div class="flex items-center gap-4">
+    <button type="submit" class="min-h-11 rounded bg-sky-700 px-5 py-2 font-semibold text-white">Tải lên và nhập</button>
+    <a href="{{ url_danh_sach }}" class="underline">Quay lại</a>
+  </div>
+</form>
+{% endblock %}

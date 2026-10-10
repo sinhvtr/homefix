@@ -1,4 +1,3 @@
-from django.contrib.auth.decorators import login_required
 from django.db import connection
 from django.http import JsonResponse
 from django.shortcuts import render
@@ -18,8 +17,6 @@ def suc_khoe(request):
     return JsonResponse({"trang_thai": "ok", "csdl": "ok"})
 
 
-@login_required
 def trang_dang_xay_dung(request, tieu_de):
-    """Trang đích tạm của P0 (A-05)."""
-    bo_cuc = "base_tho.html" if request.user.vai_tro == "THO" else "base_van_phong.html"
-    return render(request, "he_thong/dang_xay_dung.html", {"tieu_de": tieu_de, "bo_cuc": bo_cuc})
+    """Trang đích tạm (A-05); quyền gắn ở config/urls.py."""
+    return render(request, "he_thong/dang_xay_dung.html", {"tieu_de": tieu_de})

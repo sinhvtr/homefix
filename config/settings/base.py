@@ -1,5 +1,6 @@
 """Cấu hình chung cho mọi môi trường. Bí mật đọc từ biến môi trường / .env (SPEC 8.1)."""
 
+from datetime import timedelta
 from pathlib import Path
 
 import environ
@@ -27,6 +28,7 @@ INSTALLED_APPS = [
     "django_htmx",
     "django_tailwind_cli",
     "django_q",
+    "axes",
     "apps.he_thong",
     "apps.thong_bao",
     "apps.tai_khoan",
@@ -43,13 +45,14 @@ MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
-    "django.middleware.locale.LocaleMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "django_htmx.middleware.HtmxMiddleware",
+    "apps.tai_khoan.middleware.BatDoiMatKhauMiddleware",
+    "axes.middleware.AxesMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -79,10 +82,27 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # --- Tài khoản ---
 AUTH_USER_MODEL = "tai_khoan.NguoiDung"
-AUTHENTICATION_BACKENDS = ["apps.tai_khoan.backends.XacThucSdtHoacTenDangNhap"]
+AUTHENTICATION_BACKENDS = [
+    "axes.backends.AxesStandaloneBackend",
+    "apps.tai_khoan.backends.XacThucSdtHoacTenDangNhap",
+]
 LOGIN_URL = "tai_khoan:dang_nhap"
 LOGIN_REDIRECT_URL = "tai_khoan:trang_chu"
 LOGOUT_REDIRECT_URL = "tai_khoan:dang_nhap"
+
+# Khóa 15 phút sau 5 lần sai liên tiếp (UC01). Khóa theo tài khoản: sau tunnel mọi yêu cầu chung một IP.
+AXES_FAILURE_LIMIT = 5
+AXES_COOLOFF_TIME = timedelta(minutes=15)
+AXES_LOCKOUT_PARAMETERS = ["username"]
+AXES_RESET_ON_SUCCESS = True
+AXES_USERNAME_CALLABLE = "apps.tai_khoan.backends.ten_dang_nhap_chuan"
+AXES_LOCKOUT_TEMPLATE = "tai_khoan/bi_khoa.html"
+AXES_VERBOSE = False
+# W006 khuyên khóa thêm theo IP; ở đây mọi yêu cầu qua tunnel chung một IP nên cố ý chỉ khóa theo tài khoản.
+SILENCED_SYSTEM_CHECKS = ["axes.W006"]
+
+# Thông điệp (có thể chứa mật khẩu tạm/PIN hiện một lần) lưu ở session phía máy chủ, không ở cookie.
+MESSAGE_STORAGE = "django.contrib.messages.storage.session.SessionStorage"
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
@@ -92,6 +112,7 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 # --- Ngôn ngữ, thời gian, định dạng số (SPEC 5, 13) ---
+# Giao diện luôn tiếng Việt (SPEC 13): không dùng LocaleMiddleware để trình duyệt tiếng Anh không đổi định dạng.
 LANGUAGE_CODE = "vi"
 TIME_ZONE = "Asia/Ho_Chi_Minh"
 USE_I18N = True

@@ -4,7 +4,7 @@
 {% block body %}
 <header class="sticky top-0 z-10 flex items-center justify-between bg-slate-800 px-4 py-3 text-white">
   <span class="font-bold">HomeFix Thợ</span>
-  <span class="text-base">{{ user.ho_ten }}</span>
+  <span class="text-base">{{ user.ho_ten }} · <a href="{% url 'tai_khoan:doi_mat_khau' %}" class="underline">Đổi PIN</a></span>
 </header>
 <main class="px-4 pt-4 pb-24">
   {% if messages %}

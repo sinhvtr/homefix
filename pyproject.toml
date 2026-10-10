@@ -1,0 +1,67 @@
+[project]
+name = "homefix"
+version = "0.1.0"
+description = "HomeFix Ops v1 — quản lý đơn sửa chữa tại nhà"
+requires-python = ">=3.12"
+dependencies = [
+    "Django==5.2.18",
+    "psycopg[binary]==3.3.6",
+    "django-environ==0.14.0",
+    "django-q2==1.11.1",
+    "django-htmx==1.29.0",
+    "django-tailwind-cli==4.8.1",
+    "django-axes==8.3.1",
+    "whitenoise==6.12.0",
+    "gunicorn==26.2.0",
+    "pywebpush==2.5.0",
+    "httpx==0.28.1",
+    "Pillow==12.3.0",
+    "openpyxl==3.1.5",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest==9.1.1",
+    "pytest-django==4.14.0",
+    "factory-boy==3.3.3",
+    "freezegun==1.5.5",
+    "ruff==0.17.0",
+    "import-linter==2.15",
+]
+
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+# Chỉ dùng pyproject để khai báo phụ thuộc; mã nguồn chạy trực tiếp từ thư mục dự án.
+packages = []
+
+[tool.ruff]
+line-length = 110
+target-version = "py312"
+extend-exclude = ["**/migrations/*.py"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "DJ", "SIM"]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings.dev"
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "-q --strict-markers"
+filterwarnings = ["ignore:No directory at:UserWarning:django.core.handlers.base"]
+
+[tool.importlinter]
+root_packages = ["apps"]
+
+[[tool.importlinter.contracts]]
+name = "Phụ thuộc một chiều giữa các app (SPEC 14.1)"
+type = "layers"
+layers = [
+    "apps.bao_cao : apps.thuc_hien : apps.tai_chinh : apps.bao_hanh : apps.tiep_nhan_dieu_phoi",
+    "apps.don_sua_chua",
+    "apps.danh_muc",
+    "apps.tai_khoan",
+    "apps.thong_bao : apps.he_thong",
+]

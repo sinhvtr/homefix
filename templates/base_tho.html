@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% comment %}Bố cục thợ: mobile-first, chữ ≥ 16px, vùng bấm ≥ 44px (NFR08), thanh điều hướng đáy 4 mục.{% endcomment %}
+{% block body_class %}min-h-screen bg-white text-slate-900 text-lg{% endblock %}
+{% block body %}
+<header class="sticky top-0 z-10 flex items-center justify-between bg-slate-800 px-4 py-3 text-white">
+  <span class="font-bold">HomeFix Thợ</span>
+  <span class="text-base">{{ user.ho_ten }}</span>
+</header>
+<main class="px-4 pt-4 pb-24">
+  {% if messages %}
+    <ul class="mb-4 space-y-2">
+      {% for m in messages %}<li class="rounded border border-sky-200 bg-sky-50 px-4 py-3">{{ m }}</li>{% endfor %}
+    </ul>
+  {% endif %}
+  <h1 class="text-xl font-bold mb-4">{% block tieu_de %}{% endblock %}</h1>
+  {% block noi_dung %}{% endblock %}
+</main>
+<nav class="fixed inset-x-0 bottom-0 grid grid-cols-4 border-t border-slate-200 bg-white text-center text-base" aria-label="Điều hướng thợ">
+    <a href="/tho/" class="flex min-h-14 items-center justify-center py-3">Việc</a>
+    <a href="/tho/#de-nghi" class="flex min-h-14 items-center justify-center py-3">Đề nghị</a>
+    <a href="/tho/doi-soat/" class="flex min-h-14 items-center justify-center py-3">Đối soát</a>
+    <a href="/tho/cai-dat/" class="flex min-h-14 items-center justify-center py-3">Cài đặt</a>
+</nav>
+{% endblock %}

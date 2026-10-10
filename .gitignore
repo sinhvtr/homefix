@@ -1,0 +1,12 @@
+.env
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.import_linter_cache/
+media/
+backups/
+staticfiles/
+static/css/tailwind.css
+.django_tailwind_cli/

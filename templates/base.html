@@ -1,0 +1,14 @@
+{% load static tailwind_cli django_htmx %}<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}HomeFix{% endblock %}</title>
+  {% tailwind_css %}
+  {% htmx_script %}
+  {% block head %}{% endblock %}
+</head>
+<body class="{% block body_class %}min-h-screen bg-slate-50 text-slate-900 text-base{% endblock %}" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+  {% block body %}{% endblock %}
+</body>
+</html>

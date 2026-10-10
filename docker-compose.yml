@@ -1,0 +1,80 @@
+# Cấu hình chạy thật (SPEC 14.2). Trên máy chủ, đặt COMPOSE_FILE=docker-compose.yml trong .env
+# để KHÔNG nạp docker-compose.override.yml (cấu hình dev) — xem docs/GIA_DINH.md A-07.
+name: homefix
+
+x-ung-dung: &ung-dung
+  image: homefix:latest
+  env_file: .env
+  environment:
+    DJANGO_SETTINGS_MODULE: config.settings.prod
+    DATABASE_URL: postgres://${POSTGRES_USER:-homefix}:${POSTGRES_PASSWORD:?Cần POSTGRES_PASSWORD trong .env}@db:5432/${POSTGRES_DB:-homefix}
+  volumes:
+    - media:/app/media
+  depends_on:
+    db:
+      condition: service_healthy
+  restart: unless-stopped
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-homefix}
+      POSTGRES_USER: ${POSTGRES_USER:-homefix}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Cần POSTGRES_PASSWORD trong .env}
+      TZ: Asia/Ho_Chi_Minh
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  web:
+    <<: *ung-dung
+    build: .
+    ports:
+      - "127.0.0.1:8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/suc-khoe/', timeout=4)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 120s
+      start_interval: 3s
+
+  worker:
+    <<: *ung-dung
+    command: python manage.py qcluster
+    # Dùng lại image do web build, không build/pull riêng.
+    pull_policy: never
+    # Chờ web chạy xong migration (bảng hàng đợi django_q) rồi mới khởi động.
+    depends_on:
+      web:
+        condition: service_healthy
+    healthcheck:
+      disable: true
+
+  backup:
+    image: postgres:16-alpine
+    environment:
+      PGHOST: db
+      PGDATABASE: ${POSTGRES_DB:-homefix}
+      PGUSER: ${POSTGRES_USER:-homefix}
+      PGPASSWORD: ${POSTGRES_PASSWORD:?Cần POSTGRES_PASSWORD trong .env}
+      BACKUP_KEEP_DAYS: ${BACKUP_KEEP_DAYS:-14}
+      TZ: Asia/Ho_Chi_Minh
+    volumes:
+      - ./backups:/backups
+      - ./docker/backup/sao_luu.sh:/usr/local/bin/sao_luu.sh:ro
+    entrypoint: ["sh", "-c", "echo '0 2 * * * /bin/sh /usr/local/bin/sao_luu.sh' | crontab - && exec crond -f -l 8"]
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  media:

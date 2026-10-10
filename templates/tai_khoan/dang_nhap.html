@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Đăng nhập — HomeFix{% endblock %}
+{% block body %}
+<main class="flex min-h-screen items-center justify-center px-4">
+  <form method="post" class="w-full max-w-sm space-y-4 rounded-lg bg-white p-6 shadow" novalidate>
+    {% csrf_token %}
+    <h1 class="text-2xl font-bold text-center">HomeFix — Đăng nhập</h1>
+    {% if form.non_field_errors %}
+      <div class="rounded border border-red-300 bg-red-50 px-3 py-2 text-red-800" role="alert">
+        {% for loi in form.non_field_errors %}{{ loi }}{% endfor %}
+      </div>
+    {% endif %}
+    {% for truong in form %}
+      <div>
+        <label for="{{ truong.id_for_label }}" class="mb-1 block font-medium">{{ truong.label }}</label>
+        <input type="{{ truong.field.widget.input_type }}" name="{{ truong.html_name }}" id="{{ truong.id_for_label }}"
+               value="{% if truong.name == 'username' %}{{ truong.value|default_if_none:'' }}{% endif %}"
+               {% for k, v in truong.field.widget.attrs.items %}{{ k }}="{{ v }}" {% endfor %}
+               class="block w-full min-h-11 rounded border border-slate-300 px-3 py-2 text-lg" required>
+        {% for loi in truong.errors %}<p class="mt-1 text-sm text-red-700">{{ loi }}</p>{% endfor %}
+      </div>
+    {% endfor %}
+    <input type="hidden" name="next" value="{{ next }}">
+    <button type="submit" class="w-full min-h-11 rounded bg-sky-700 px-4 py-2 text-lg font-semibold text-white hover:bg-sky-800">Đăng nhập</button>
+  </form>
+</main>
+{% endblock %}

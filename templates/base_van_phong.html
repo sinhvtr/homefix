@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% comment %}Bố cục văn phòng (tổng đài, quản trị, kế toán, giám đốc): thanh bên trái theo vai trò, tối ưu ≥ 1280px.{% endcomment %}
+{% block body %}
+<div class="flex min-h-screen">
+  <aside class="w-60 shrink-0 bg-slate-800 text-slate-100 flex flex-col">
+    <div class="px-5 py-4 text-xl font-bold">HomeFix</div>
+    <nav class="flex-1 px-2 space-y-1" aria-label="Chức năng">
+      {% for nhan, duong_dan in menu %}
+        <a href="{{ duong_dan }}" class="block rounded px-3 py-2 hover:bg-slate-700{% if request.path == duong_dan %} bg-slate-700 font-semibold{% endif %}">{{ nhan }}</a>
+      {% endfor %}
+    </nav>
+    <div class="px-5 py-4 border-t border-slate-700 text-sm">
+      <div class="font-semibold">{{ user.ho_ten }}</div>
+      <div class="text-slate-400">{{ user.get_vai_tro_display }}</div>
+      <form method="post" action="{% url 'tai_khoan:dang_xuat' %}" class="mt-2">
+        {% csrf_token %}
+        <button type="submit" class="underline text-slate-300 hover:text-white">Đăng xuất</button>
+      </form>
+    </div>
+  </aside>
+  <main class="flex-1 p-6">
+    {% if messages %}
+      <ul class="mb-4 space-y-2">
+        {% for m in messages %}<li class="rounded border border-sky-200 bg-sky-50 px-4 py-2">{{ m }}</li>{% endfor %}
+      </ul>
+    {% endif %}
+    <h1 class="text-2xl font-bold mb-4">{% block tieu_de %}{% endblock %}</h1>
+    {% block noi_dung %}{% endblock %}
+  </main>
+</div>
+{% endblock %}

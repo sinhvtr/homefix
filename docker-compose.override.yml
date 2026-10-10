@@ -1,0 +1,29 @@
+# Cấu hình phát triển: tự nạp khi chạy `docker compose ...` trên máy dev.
+# Mã nguồn gắn trực tiếp vào container, runserver tự nạp lại, CSDL mở cổng 127.0.0.1:5433 để chạy pytest ngoài Docker.
+services:
+  db:
+    ports:
+      - "127.0.0.1:5433:5432"
+
+  web:
+    build:
+      context: .
+      args:
+        CAI_DEV: "1"
+    image: homefix:dev
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.dev
+      DJANGO_DEBUG: "1"
+    volumes:
+      - .:/app
+      - media:/app/media
+    command: >
+      sh -c "python manage.py tailwind build && python manage.py migrate --noinput
+      && python manage.py runserver 0.0.0.0:8000"
+
+  worker:
+    image: homefix:dev
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.dev
+    volumes:
+      - .:/app

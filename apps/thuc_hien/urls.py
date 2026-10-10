@@ -14,6 +14,10 @@ urlpatterns = [
     path("de-nghi/<int:pk>/tu-choi/", views.tu_choi, name="tu_choi"),
     path("don/<ma_don:ma_don>/", views.don, name="don"),
     path("don/<ma_don:ma_don>/tra-viec/", views.tra_viec, name="tra_viec"),
+    path("don/<ma_don:ma_don>/den-noi/", views.den_noi, name="den_noi"),
+    path("don/<ma_don:ma_don>/bao-gia/", views.bao_gia, name="bao_gia"),
+    path("don/<ma_don:ma_don>/hoan-thanh/", views.hoan_thanh, name="hoan_thanh"),
+    path("don/<ma_don:ma_don>/da-xong/", views.da_xong, name="da_xong"),
     path("cai-dat/", views.cai_dat, name="cai_dat"),
     path("cai-dat/gui-thu/", views.gui_thu, name="gui_thu"),
 ]

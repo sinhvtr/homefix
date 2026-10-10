@@ -19,6 +19,8 @@ urlpatterns = [
     path("", include("apps.thong_bao.urls")),
     path("manifest.webmanifest", thuc_hien_views.manifest, name="manifest"),
     path("service-worker.js", thuc_hien_views.service_worker, name="service_worker"),
+    path("anh/<int:pk>/", thuc_hien_views.xem_anh, name="xem_anh"),
+    path("anh/thanh-toan/<int:pk>/", thuc_hien_views.xem_chung_tu, name="xem_chung_tu"),
     path(
         "ke-toan/doi-soat/",
         yeu_cau_vai_tro(KT, QT, GD)(trang_tam),

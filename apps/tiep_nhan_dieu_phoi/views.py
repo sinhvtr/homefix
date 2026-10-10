@@ -8,7 +8,7 @@ from django.urls import reverse
 from django.views.decorators.http import require_POST
 
 from apps.danh_muc.dao import KhachHangDAO
-from apps.don_sua_chua.dao import GHI_DON, XEM_BANG_DON, XEM_DON, DonSuaChuaDAO, LocBangDon
+from apps.don_sua_chua.dao import GHI_DON, XEM_BANG_DON, XEM_DON, DonSuaChuaDAO, HienTruongDAO, LocBangDon
 from apps.don_sua_chua.models import DonSuaChua
 from apps.don_sua_chua.trang_thai import ChuyenTrangThaiKhongHopLe, TrangThaiDon
 from apps.he_thong.bieu_mau import gan_loi_vao_form
@@ -151,6 +151,10 @@ def chi_tiet_don(request, ma_don):
                 else None
             ),
             "dang_xu_ly": don.dang_xu_ly,
+            "tien": don.bang_tinh_tien(),
+            "ds_anh": list(don.ds_anh.all()),
+            "ds_thanh_toan": list(don.ds_thanh_toan.all()),
+            "phieu_bao_hanh": getattr(don, "phieu_bao_hanh", None),
         },
     )
 
@@ -228,3 +232,17 @@ def huy_don(request, ma_don):
             "quay_lai": reverse("chi_tiet_don", args=[ma_don]),
         },
     )
+
+
+@require_POST
+@yeu_cau_vai_tro(*GHI_DON)
+def xac_nhan_gia(request, ma_don):
+    """T12: tổng đài đã gọi khách xác nhận báo giá vượt ngưỡng (OI-08)."""
+    don = _lay_don(request, ma_don)
+    try:
+        HienTruongDAO.tong_dai_xac_nhan_gia(request.user, don)
+    except ChuyenTrangThaiKhongHopLe as loi:
+        messages.error(request, str(loi))
+    else:
+        messages.success(request, "Đã xác nhận báo giá với khách — thợ được báo bắt đầu sửa.")
+    return redirect("chi_tiet_don", ma_don=ma_don)

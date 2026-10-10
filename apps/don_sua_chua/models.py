@@ -1,6 +1,7 @@
 """Gói lõi: DonSuaChua, HangMucSuaChua (SPEC 5.2). Trạng thái chỉ đổi qua phương thức nghiệp vụ (bảng CHUYEN_TRANG_THAI)."""
 
-from decimal import ROUND_HALF_UP, Decimal
+import uuid
+from decimal import Decimal
 
 from django.conf import settings
 from django.db import models
@@ -10,6 +11,8 @@ from apps.danh_muc.models import DiaChi, DichVu, KhachHang, ThietBi, Tho
 from apps.he_thong.cau_hinh import cau_hinh
 from apps.he_thong.models import MoHinhCoBan
 
+from .tinh_tien import DongTien, KetQuaTinhTien, tinh_tien
+from .tinh_tien import thanh_tien as tinh_thanh_tien
 from .trang_thai import DANG_XU_LY, DAU, ChuyenTrangThaiKhongHopLe, SuKien, TrangThaiDon, tim_chuyen
 
 LY_DO_HET_LUOT_NHAC = "Khách không phản hồi sau 3 lần nhắc"
@@ -177,13 +180,20 @@ class DonSuaChua(MoHinhCoBan):
         phieu = getattr(self, "phieu_bao_hanh", None)
         return bool(phieu is not None and phieu.con_han)
 
-    def tong_tien_khach_tam_tinh(self) -> int:
-        """Σ thành tiền các dòng khách chịu. TODO-P4: thay bằng tinh_tien.py (giảm VIP, mục 7.2)."""
-        return sum(
-            hm.thanh_tien
-            for hm in self.ds_hang_muc.all()
-            if hm.ben_chiu_chi_phi == HangMucSuaChua.BenChiu.KHACH
+    def bang_tinh_tien(self, ds_hang_muc=None) -> KetQuaTinhTien:
+        """Tính theo SPEC 7.2 từ hạng mục hiện có (hoặc danh sách truyền vào), giảm VIP theo cấu hình."""
+        ds = self.ds_hang_muc.all() if ds_hang_muc is None else ds_hang_muc
+        return tinh_tien(
+            (DongTien(hm.loai, hm.thanh_tien, hm.ben_chiu_chi_phi) for hm in ds),
+            la_vip=self.khach_hang.la_vip,
+            ty_le_giam=cau_hinh("VIP_TY_LE_GIAM"),
+            pham_vi=cau_hinh("VIP_PHAM_VI_GIAM"),
         )
+
+    @property
+    def tong_tien(self) -> int:
+        """Tổng khách phải trả tính từ hạng mục (SPEC 5.2, 7.2)."""
+        return self.bang_tinh_tien().tong_tien
 
     # ------------------------------------------------------------ phương thức nghiệp vụ (SPEC 5.2, bảng 6.1)
 
@@ -276,7 +286,7 @@ class DonSuaChua(MoHinhCoBan):
 
     def _chot_bao_gia(self, nguoi: str, luc) -> None:
         self.ds_hang_muc.update(la_bao_gia=True)
-        self.bao_gia_tong = self.tong_tien_khach_tam_tinh()
+        self.bao_gia_tong = self.tong_tien
         self.bao_gia_nguoi_xac_nhan = nguoi or self.khach_hang.ho_ten
         self.bao_gia_xac_nhan_luc = luc or timezone.now()
 
@@ -286,7 +296,7 @@ class DonSuaChua(MoHinhCoBan):
             tim_chuyen(self.trang_thai, SuKien.KHACH_DUYET_GIA)  # ném lỗi với thông điệp chuẩn
         self._kiem_tra_bao_gia()
         nguong = cau_hinh("NGUONG_BAO_GIA_TONG_DAI_XAC_NHAN")
-        tong = self.tong_tien_khach_tam_tinh()
+        tong = self.tong_tien
         if nguong > 0 and tong >= nguong:
             self.cho_tong_dai_xac_nhan_gia = True
             self.bao_gia_tong = tong
@@ -335,7 +345,7 @@ class DonSuaChua(MoHinhCoBan):
         if so_anh < cau_hinh("SO_ANH_TOI_THIEU_KHI_HOAN_THANH"):
             raise ChuyenTrangThaiKhongHopLe("Chưa đủ ảnh hiện trường.")
         self._chuyen(SuKien.HOAN_THANH)
-        self.tong_tien_phai_thu = self.tong_tien_khach_tam_tinh()
+        self.tong_tien_phai_thu = self.tong_tien
         self._luu(["tong_tien_phai_thu"])
 
     def mo_bao_hanh(self, don_bh: "DonSuaChua") -> None:
@@ -453,6 +463,36 @@ class HangMucSuaChua(MoHinhCoBan):
     @property
     def thanh_tien(self) -> int:
         """so_luong × don_gia_thuc_te, làm tròn đến đồng."""
-        return int(
-            (Decimal(self.so_luong) * self.don_gia_thuc_te).quantize(Decimal(1), rounding=ROUND_HALF_UP)
-        )
+        return tinh_thanh_tien(self.so_luong, self.don_gia_thuc_te)
+
+
+def duong_dan_anh(anh: "AnhHienTruong", ten_goc: str) -> str:
+    """Tên tệp ngẫu nhiên, không chứa thông tin khách (NFR04)."""
+    bay_gio = timezone.localtime()
+    return f"anh/{bay_gio:%Y/%m}/{uuid.uuid4().hex}.jpg"
+
+
+class AnhHienTruong(MoHinhCoBan):
+    """Ảnh hiện trường / ảnh báo giá của đơn (UC08, UC09). Lớp hỗ trợ — A-67. Phục vụ qua /anh/<id>/ có kiểm quyền."""
+
+    class Loai(models.TextChoices):
+        HIEN_TRUONG = "HIEN_TRUONG", "Ảnh hiện trường"
+        BAO_GIA = "BAO_GIA", "Ảnh báo giá"
+
+    don = models.ForeignKey(DonSuaChua, verbose_name="đơn", on_delete=models.CASCADE, related_name="ds_anh")
+    loai = models.CharField("loại", max_length=12, choices=Loai.choices, default=Loai.HIEN_TRUONG)
+    tep = models.ImageField("tệp ảnh", upload_to=duong_dan_anh)
+    rong = models.PositiveIntegerField("rộng (px)")
+    cao = models.PositiveIntegerField("cao (px)")
+    nguoi_tai = models.ForeignKey(
+        settings.AUTH_USER_MODEL, verbose_name="người tải", on_delete=models.PROTECT, related_name="+"
+    )
+
+    class Meta:
+        db_table = "tblAnhHienTruong"
+        verbose_name = "ảnh hiện trường"
+        verbose_name_plural = "ảnh hiện trường"
+        ordering = ["tao_luc", "id"]
+
+    def __str__(self):
+        return f"{self.don_id}: {self.get_loai_display()} #{self.pk}"

@@ -27,3 +27,26 @@ def tin_nhan_goi_lai(don: DonSuaChua) -> str:
     return MAU_GOI_LAI.format(
         ten_khach=_ten_khach(don), ma_don=don.ma_don, dich_vu=don.dich_vu_yeu_cau.ten_dich_vu
     )
+
+
+LY_DO_TU_CHOI_GIA = ["Giá cao", "Khách tự sửa / mua mới", "Để khách cân nhắc thêm", "Lý do khác"]
+
+MAU_CAM_ON = (
+    "HomeFix cảm ơn {ten_khach}! Đơn {ma_don} ({dich_vu}) đã hoàn thành, tổng thanh toán {tong}. "
+    "{bao_hanh}Cần hỗ trợ xin gọi lại số tổng đài HomeFix."
+)
+
+
+def tin_nhan_cam_on(don) -> str:
+    """Thợ sao chép gửi khách sau khi hoàn thành (UC09)."""
+    phieu = getattr(don, "phieu_bao_hanh", None)
+    bao_hanh = (
+        f"Bảo hành đến hết ngày {phieu.ngay_het_han:%d/%m/%Y} (mã {phieu.ma}). " if phieu is not None else ""
+    )
+    return MAU_CAM_ON.format(
+        ten_khach=_ten_khach(don),
+        ma_don=don.ma_don,
+        dich_vu=don.dich_vu_yeu_cau.ten_dich_vu,
+        tong=f"{don.tong_tien_phai_thu or 0:,} đ".replace(",", "."),
+        bao_hanh=bao_hanh,
+    )

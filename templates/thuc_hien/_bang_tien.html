@@ -1,0 +1,9 @@
+{% load dinh_dang l10n %}
+{# Bảng tiền theo SPEC 7.2 — dùng chung trang thợ và trang văn phòng #}
+<dl class="mt-3 grid grid-cols-[1fr_auto] gap-x-4 gap-y-1">
+  <dt>Tiền công</dt><dd class="text-right">{{ tien.tien_cong|tien }}</dd>
+  <dt>Vật tư</dt><dd class="text-right">{{ tien.tien_vat_tu|tien }}</dd>
+  {% if tien.phi_khac %}<dt>Phí khác</dt><dd class="text-right">{{ tien.phi_khac|tien }}</dd>{% endif %}
+  {% if tien.giam_vip %}<dt>Giảm giá VIP</dt><dd class="text-right text-green-700">−{{ tien.giam_vip|tien }}</dd>{% endif %}
+  <dt class="border-t pt-1 text-xl font-bold">Khách phải trả</dt><dd class="border-t pt-1 text-right text-2xl font-bold" data-tong="{{ tien.tong_tien|unlocalize }}">{{ tien.tong_tien|tien }}</dd>
+</dl>

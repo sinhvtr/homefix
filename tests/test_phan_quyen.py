@@ -74,6 +74,8 @@ MA_TRAN = [
     ("GET", "/don/{ma}/cu-tho/", {QT, TD, GD}),
     ("POST", "/don/{ma}/cu-tho/", {QT, TD}),
     ("GET", "/tho-lich/", {QT, TD, GD}),
+    # Báo giá (P4): tổng đài xác nhận giá vượt ngưỡng (T12). Trang báo giá/hoàn thành của thợ: kiểm thử riêng (404)
+    ("POST", "/don/{ma}/xac-nhan-gia/", {QT, TD}),
     # Màn hình thợ (PWA)
     ("GET", "/tho/cai-dat/", {THO}),
     ("POST", "/tho/san-sang/", {THO}),

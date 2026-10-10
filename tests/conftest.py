@@ -93,6 +93,12 @@ def thong_bao_dong_bo(settings):
 
 
 @pytest.fixture(autouse=True)
+def media_tam(settings, tmp_path):
+    """Ảnh tải lên trong kiểm thử ghi vào thư mục tạm, không lẫn vào media/ thật."""
+    settings.MEDIA_ROOT = tmp_path / "media"
+
+
+@pytest.fixture(autouse=True)
 def xoa_bo_dem():
     cache.clear()
     yield
@@ -198,3 +204,47 @@ def don_cho_cu_tho(ngay_gio=None, **kw):
     don = tao_don("CHO_CU_THO", **kw)
     don.lich = tao_lich(don, ngay_gio=ngay_gio)
     return don
+
+
+def anh_thu(rong=3000, cao=2000, dinh_dang="JPEG", xoay_exif=None, ten="anh.jpg"):
+    """Ảnh giả lập ảnh chụp điện thoại (kèm EXIF hãng máy, tùy chọn hướng xoay)."""
+    import io
+
+    from django.core.files.uploadedfile import SimpleUploadedFile
+    from PIL import Image
+
+    anh = Image.new("RGB", (rong, cao), (200, 120, 40))
+    exif = anh.getexif()
+    exif[0x010F] = "DienThoaiThu"  # Make
+    if xoay_exif:
+        exif[0x0112] = xoay_exif  # Orientation
+    dem = io.BytesIO()
+    anh.save(dem, format=dinh_dang, exif=exif.tobytes()) if dinh_dang == "JPEG" else anh.save(
+        dem, format=dinh_dang
+    )
+    return SimpleUploadedFile(ten, dem.getvalue(), content_type=f"image/{dinh_dang.lower()}")
+
+
+def don_tho_da_nhan(nhom="VE_SINH_BAO_DUONG", khach=None, don_gia=150_000, **kw):
+    """Đơn DA_CO_THO đi đúng luồng: tạo → chốt lịch → tổng đài gửi đề nghị → thợ nhận. Trả (don, tho, tong_dai)."""
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+
+    from apps.don_sua_chua.models import DonSuaChua
+    from apps.tiep_nhan_dieu_phoi.dao import PhanCongDAO
+    from apps.tiep_nhan_dieu_phoi.models import PhanCong
+
+    tong_dai = NguoiDungFactory(vai_tro=VaiTro.TONG_DAI)
+    dv = DichVuFactory(
+        nhom_dich_vu=nhom,
+        don_gia_tham_khao=don_gia,
+        thoi_han_bao_hanh_ngay=7 if nhom == "VE_SINH_BAO_DUONG" else 90,
+    )
+    dc = DiaChiFactory(khach_hang=khach) if khach else DiaChiFactory()
+    don = don_cho_cu_tho(
+        ngay_gio=datetime(2099, 6, 1, 8, 0, tzinfo=ZoneInfo("Asia/Ho_Chi_Minh")), dich_vu=dv, dia_chi=dc, **kw
+    )
+    tho = tao_tho_phu_hop(dv)
+    PhanCongDAO.gui_de_nghi(tong_dai, don, [tho.pk])
+    PhanCongDAO.nhan_viec(tho.nguoi_dung, PhanCong.objects.get(don=don, tho=tho).pk)
+    return DonSuaChua.objects.get(pk=don.pk), tho, tong_dai

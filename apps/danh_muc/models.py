@@ -1,7 +1,10 @@
 """KhachHang, DiaChi, ThietBi, DichVu, Tho, KhuVuc (SPEC 5.2, UC13)."""
 
+from datetime import timedelta
+
 from django.conf import settings
 from django.db import models
+from django.utils import timezone
 
 from apps.he_thong.models import MoHinhCoBan
 from apps.he_thong.so_dien_thoai import chuan_hoa_sdt
@@ -14,6 +17,10 @@ class LoaiThietBi(models.TextChoices):
     BINH_NONG_LANH = "BINH_NONG_LANH", "Bình nóng lạnh"
     DIEN_NUOC = "DIEN_NUOC", "Điện nước"
     KHAC = "KHAC", "Khác"
+
+
+# Trạng thái đơn được tính là "đã sử dụng dịch vụ" cho BR07 (mã trạng thái của DonSuaChua)
+TRANG_THAI_DA_LAM_XONG = ("HOAN_THANH", "DANG_BAO_HANH", "DA_DONG")
 
 
 class KhuVuc(MoHinhCoBan):
@@ -64,6 +71,14 @@ class KhachHang(MoHinhCoBan):
     @property
     def la_vip(self) -> bool:
         return self.loai_khach == self.LoaiKhach.VIP
+
+    @property
+    def so_lan_su_dung_trong_nam(self) -> int:
+        """Số đơn đã làm xong (HOAN_THANH, DANG_BAO_HANH, DA_DONG) tiếp nhận trong 365 ngày gần nhất (BR07, A-71).
+        DonSuaChua thuộc gói lõi (tầng trên) — đếm qua quan hệ ngược, không import."""
+        return self.ds_don.filter(
+            trang_thai__in=TRANG_THAI_DA_LAM_XONG, ngay_tiep_nhan__gte=timezone.now() - timedelta(days=365)
+        ).count()
 
 
 class DiaChi(MoHinhCoBan):

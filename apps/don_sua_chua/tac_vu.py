@@ -4,9 +4,10 @@ import logging
 from datetime import timedelta
 
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Count, Q
 from django.utils import timezone
 
+from apps.danh_muc.models import TRANG_THAI_DA_LAM_XONG, KhachHang
 from apps.he_thong.cau_hinh import cau_hinh
 from apps.he_thong.nhat_ky import ghi_nhat_ky
 
@@ -44,3 +45,39 @@ def nhac_xac_nhan_lich(bay_gio=None) -> dict[str, int]:
     if any(ket_qua.values()):
         log.info("BR08 nhắc xác nhận lịch: %s", ket_qua)
     return ket_qua
+
+
+def cap_nhat_khach_vip(bay_gio=None) -> dict[str, int]:
+    """BR07 — hằng ngày 01:00: khách có ≥ VIP_SO_DON_TOI_THIEU đơn đã làm xong trong 365 ngày, hoặc VIP thủ công
+    (giám đốc giới thiệu) → VIP; hết điều kiện → THUONG. Lũy đẳng; mỗi thay đổi ghi nhật ký."""
+    bay_gio = bay_gio or timezone.now()
+    nguong = cau_hinh("VIP_SO_DON_TOI_THIEU")
+    qs = KhachHang.objects.annotate(
+        so_don=Count(
+            "ds_don",
+            filter=Q(
+                ds_don__trang_thai__in=TRANG_THAI_DA_LAM_XONG,
+                ds_don__ngay_tiep_nhan__gte=bay_gio - timedelta(days=365),
+            ),
+        )
+    )
+    ket_qua = {"len_vip": 0, "ve_thuong": 0}
+    with transaction.atomic():
+        for kh in qs.filter(Q(vip_thu_cong=True) | Q(so_don__gte=nguong)).exclude(
+            loai_khach=KhachHang.LoaiKhach.VIP
+        ):
+            _doi_loai_khach(kh, KhachHang.LoaiKhach.VIP)
+            ket_qua["len_vip"] += 1
+        for kh in qs.filter(vip_thu_cong=False, so_don__lt=nguong, loai_khach=KhachHang.LoaiKhach.VIP):
+            _doi_loai_khach(kh, KhachHang.LoaiKhach.THUONG)
+            ket_qua["ve_thuong"] += 1
+    return ket_qua
+
+
+def _doi_loai_khach(kh, loai: str) -> None:
+    truoc = kh.loai_khach
+    kh.loai_khach = loai
+    kh.save(update_fields=["loai_khach", "cap_nhat_luc"])
+    ghi_nhat_ky(
+        None, "CAP_NHAT_VIP", kh, {"loai_khach": truoc}, {"loai_khach": loai, "so_don_365_ngay": kh.so_don}
+    )

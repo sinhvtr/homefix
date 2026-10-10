@@ -3,20 +3,23 @@ gọi phương thức nghiệp vụ (bảng CHUYEN_TRANG_THAI), ghi nhật ký m
 
 from dataclasses import dataclass, field
 from datetime import date, timedelta
+from decimal import Decimal
 
-from django.core.exceptions import ValidationError
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
 from django.db.models import Prefetch, Q
 from django.utils import timezone
 
+from apps.he_thong.anh import nen_anh
 from apps.he_thong.bo_dem import cap_so_thu_tu
 from apps.he_thong.cau_hinh import cau_hinh
 from apps.he_thong.models import NhatKyThaoTac
 from apps.he_thong.nhat_ky import ghi_nhat_ky
-from apps.tai_khoan.phan_quyen import GD, TD, VAN_PHONG, kiem_tra_vai_tro
+from apps.tai_khoan.models import VaiTro
+from apps.tai_khoan.phan_quyen import GD, QT, TD, VAN_PHONG, co_vai_tro, kiem_tra_vai_tro
 from apps.thong_bao.dich_vu import DichVuThongBao
 
-from .models import DonSuaChua
+from .models import AnhHienTruong, DonSuaChua, HangMucSuaChua
 from .trang_thai import DANG_THUC_HIEN, DANG_XU_LY, TrangThaiDon
 
 GHI_DON = (TD,)  # TONG_DAI và QUAN_TRI (SPEC 3.1: CRU + hủy)
@@ -344,4 +347,236 @@ class DonSuaChuaDAO:
             kiem_tra_vai_tro(nguoi_dung, *GHI_DON)
         return DonSuaChuaDAO._thuc_hien(
             nguoi_dung, don, lambda d: d.ghi_nhan_nhac_xac_nhan(luc), "NHAC_XAC_NHAN"
+        )
+
+
+# ====================================================================== UC08, UC10 — hiện trường (thợ), báo giá
+
+SUA_HANG_MUC_DUOC = frozenset({T.CHO_DUYET_GIA, T.DANG_SUA})
+SO_ANH_TOI_DA = 5
+NGUONG_VUOT_BAO_GIA = Decimal("1.10")  # tổng mới vượt báo giá đã duyệt > 10% → cảnh báo (UC09 [ĐX], A-26)
+
+
+def _anh_chup_hang_muc(hm: HangMucSuaChua) -> dict:
+    return {
+        "loai": hm.loai,
+        "mo_ta": hm.mo_ta,
+        "so_luong": str(hm.so_luong),
+        "don_gia_thuc_te": hm.don_gia_thuc_te,
+        "gia_mua": hm.gia_mua,
+        "nguoi_ung": hm.nguoi_ung,
+        "ben_chiu_chi_phi": hm.ben_chiu_chi_phi,
+    }
+
+
+def nguoi_dieu_phoi(don: DonSuaChua):
+    """Tổng đài phụ trách đơn: người giao phân công đang nhận; không có thì người tạo đơn."""
+    pc = don.ds_phan_cong.filter(trang_thai="DA_NHAN").select_related("nguoi_giao").first()
+    return pc.nguoi_giao if pc else don.nguoi_tao
+
+
+class HienTruongDAO:
+    """Thao tác tại hiện trường (UC08–UC10). Thợ chỉ thao tác trên đơn mình phụ trách; quản trị được sửa báo giá
+    (SPEC 3.1: Báo giá — QT R/U, THO CRU đơn của mình)."""
+
+    @staticmethod
+    def kiem_tra_tho_cua_don(nguoi_dung, don: DonSuaChua, cho_quan_tri=False) -> None:
+        if cho_quan_tri and co_vai_tro(nguoi_dung, QT):
+            return
+        kiem_tra_vai_tro(nguoi_dung, VaiTro.THO)
+        if don.tho_id is None or don.tho.nguoi_dung_id != nguoi_dung.pk:
+            raise PermissionDenied("Không phải việc của bạn.")
+
+    @staticmethod
+    def tho_den_noi(nguoi_dung, don: DonSuaChua) -> str:
+        """Thợ bấm “Đã đến nơi” (A-02): T9 sửa chữa → chờ duyệt giá; T10 vệ sinh → đang sửa (dòng CONG theo bảng giá)."""
+        HienTruongDAO.kiem_tra_tho_cua_don(nguoi_dung, don)
+        DonSuaChuaDAO._thuc_hien(nguoi_dung, don, lambda d: d.tho_den_noi(), "THO_DEN_NOI")
+        return DonSuaChua.objects.values_list("trang_thai", flat=True).get(pk=don.pk)
+
+    @staticmethod
+    def _khoa_don_sua_duoc(nguoi_dung, don: DonSuaChua) -> DonSuaChua:
+        don = (
+            DonSuaChua.objects.select_for_update(of=("self",))
+            .select_related("tho", "khach_hang")
+            .get(pk=don.pk)
+        )
+        HienTruongDAO.kiem_tra_tho_cua_don(nguoi_dung, don, cho_quan_tri=True)
+        if don.trang_thai not in SUA_HANG_MUC_DUOC:
+            raise ValidationError(f"Đơn đang “{don.get_trang_thai_display()}”, không sửa hạng mục được.")
+        return don
+
+    @staticmethod
+    def vuot_bao_gia(don: DonSuaChua) -> bool:
+        return (
+            bool(don.bao_gia_tong)
+            and Decimal(don.tong_tien) > Decimal(don.bao_gia_tong) * NGUONG_VUOT_BAO_GIA
+        )
+
+    @staticmethod
+    def them_hang_muc(nguoi_dung, don: DonSuaChua, du_lieu: dict) -> HangMucSuaChua:
+        """Dòng tiền công (chọn dịch vụ bảng giá, đơn giá điền sẵn, cho sửa) hoặc vật tư (UC10) / phí khác."""
+        loai = du_lieu["loai"]
+        if loai not in HangMucSuaChua.Loai.values:
+            raise ValidationError("Loại hạng mục không hợp lệ.")
+        so_luong = (
+            Decimal(str(du_lieu["so_luong"])) if du_lieu.get("so_luong") not in (None, "") else Decimal(1)
+        )
+        if so_luong <= 0:
+            raise ValidationError({"so_luong": "Số lượng phải lớn hơn 0."})
+        with transaction.atomic():
+            don = HienTruongDAO._khoa_don_sua_duoc(nguoi_dung, don)
+            dv = du_lieu.get("dich_vu")
+            don_gia = du_lieu.get("don_gia_thuc_te")
+            if loai == HangMucSuaChua.Loai.CONG:
+                if dv is None:
+                    raise ValidationError({"dich_vu": "Chọn dịch vụ từ bảng giá."})
+                don_gia = dv.don_gia_tham_khao if don_gia in (None, "") else don_gia
+                mo_ta = du_lieu.get("mo_ta") or dv.ten_dich_vu
+            else:
+                mo_ta = (du_lieu.get("mo_ta") or "").strip()
+                if not mo_ta:
+                    raise ValidationError({"mo_ta": "Nhập tên vật tư / khoản phí."})
+            if don_gia in (None, "") or int(don_gia) < 0:
+                raise ValidationError({"don_gia_thuc_te": "Nhập đơn giá (≥ 0 đ)."})
+            hm = HangMucSuaChua.objects.create(
+                don=don,
+                loai=loai,
+                dich_vu=dv if loai == HangMucSuaChua.Loai.CONG else None,
+                mo_ta=mo_ta[:255],
+                so_luong=so_luong,
+                don_gia_thuc_te=int(don_gia),
+                gia_mua=du_lieu.get("gia_mua") if loai == HangMucSuaChua.Loai.VAT_TU else None,
+                co_hoa_don=bool(du_lieu.get("co_hoa_don")) if loai == HangMucSuaChua.Loai.VAT_TU else False,
+                nguoi_ung=du_lieu.get("nguoi_ung") or HangMucSuaChua.NguoiUng.THO,  # OI-04: mặc định thợ ứng
+                ben_chiu_chi_phi=don.ben_chiu_mac_dinh(loai),
+            )
+            ghi_nhat_ky(
+                nguoi_dung, "THEM_HANG_MUC", don, du_lieu_sau={"hang_muc": hm.pk, **_anh_chup_hang_muc(hm)}
+            )
+        return hm
+
+    @staticmethod
+    def sua_hang_muc(nguoi_dung, hm: HangMucSuaChua, so_luong, don_gia: int) -> HangMucSuaChua:
+        """Sửa số lượng/giá; mọi thay đổi ghi trước/sau (NFR06) — đặc biệt sau khi khách đã duyệt báo giá."""
+        so_luong = Decimal(str(so_luong))
+        if so_luong <= 0 or int(don_gia) < 0:
+            raise ValidationError("Số lượng phải > 0 và đơn giá ≥ 0.")
+        with transaction.atomic():
+            HienTruongDAO._khoa_don_sua_duoc(nguoi_dung, hm.don)
+            hm = HangMucSuaChua.objects.select_for_update().get(pk=hm.pk)
+            truoc = _anh_chup_hang_muc(hm)
+            hm.so_luong, hm.don_gia_thuc_te = so_luong, int(don_gia)
+            hm.save(update_fields=["so_luong", "don_gia_thuc_te", "cap_nhat_luc"])
+            ghi_nhat_ky(
+                nguoi_dung,
+                "SUA_HANG_MUC",
+                hm.don,
+                {"hang_muc": hm.pk, **truoc, "sau_bao_gia_da_duyet": hm.la_bao_gia},
+                {"hang_muc": hm.pk, **_anh_chup_hang_muc(hm)},
+            )
+        return hm
+
+    @staticmethod
+    def xoa_hang_muc(nguoi_dung, hm: HangMucSuaChua) -> None:
+        with transaction.atomic():
+            HienTruongDAO._khoa_don_sua_duoc(nguoi_dung, hm.don)
+            ghi_nhat_ky(
+                nguoi_dung,
+                "XOA_HANG_MUC",
+                hm.don,
+                du_lieu_truoc={"hang_muc": hm.pk, **_anh_chup_hang_muc(hm), "la_bao_gia": hm.la_bao_gia},
+            )
+            hm.delete()
+
+    @staticmethod
+    def goi_y_ten_vat_tu(gioi_han: int = 200) -> list[str]:
+        """Tên vật tư đã nhập trước đây — tự hoàn thành ô nhập (UC10)."""
+        return list(
+            HangMucSuaChua.objects.filter(loai=HangMucSuaChua.Loai.VAT_TU)
+            .values_list("mo_ta", flat=True)
+            .distinct()
+            .order_by("mo_ta")[:gioi_han]
+        )
+
+    @staticmethod
+    def luu_anh(
+        nguoi_dung, don: DonSuaChua, tep, loai: str = AnhHienTruong.Loai.HIEN_TRUONG
+    ) -> AnhHienTruong:
+        """Nén phía máy chủ (≤ 1600 px, JPEG 80%), tối đa 5 ảnh hiện trường mỗi đơn."""
+        HienTruongDAO.kiem_tra_tho_cua_don(nguoi_dung, don)
+        noi_dung, rong, cao = nen_anh(tep)
+        with transaction.atomic():
+            don = DonSuaChua.objects.select_for_update(of=("self",)).get(pk=don.pk)
+            if (
+                loai == AnhHienTruong.Loai.HIEN_TRUONG
+                and don.ds_anh.filter(loai=loai).count() >= SO_ANH_TOI_DA
+            ):
+                raise ValidationError(f"Tối đa {SO_ANH_TOI_DA} ảnh hiện trường.")
+            anh = AnhHienTruong(don=don, loai=loai, rong=rong, cao=cao, nguoi_tai=nguoi_dung)
+            anh.tep.save("anh.jpg", noi_dung, save=False)
+            anh.save()
+            ghi_nhat_ky(nguoi_dung, "TAI_ANH", don, du_lieu_sau={"anh": anh.pk, "loai": loai})
+        return anh
+
+    @staticmethod
+    def xoa_anh(nguoi_dung, anh: AnhHienTruong) -> None:
+        HienTruongDAO.kiem_tra_tho_cua_don(nguoi_dung, anh.don)
+        if anh.don.trang_thai not in SUA_HANG_MUC_DUOC:
+            raise ValidationError("Đơn đã hoàn thành, không xóa ảnh được.")
+        with transaction.atomic():
+            ghi_nhat_ky(nguoi_dung, "XOA_ANH", anh.don, du_lieu_truoc={"anh": anh.pk})
+            anh.tep.delete(save=False)
+            anh.delete()
+
+    # ------------------------------------------------------------ duyệt báo giá (UC08, BR06, OI-08)
+
+    @staticmethod
+    def khach_duyet_gia(nguoi_dung, don: DonSuaChua, nguoi_xac_nhan: str) -> bool:
+        """Khách đồng ý: dưới ngưỡng → T11 (chốt báo giá); từ ngưỡng → chờ tổng đài gọi xác nhận (T12), báo tổng đài."""
+        HienTruongDAO.kiem_tra_tho_cua_don(nguoi_dung, don, cho_quan_tri=True)
+        xong = DonSuaChuaDAO._thuc_hien(
+            nguoi_dung,
+            don,
+            lambda d: d.khach_duyet_gia(nguoi_xac_nhan),
+            "KHACH_DUYET_GIA",
+            {"nguoi_xac_nhan": nguoi_xac_nhan},
+        )
+        don.refresh_from_db()
+        if not xong:
+            DichVuThongBao.gui(
+                nguoi_dieu_phoi(don),
+                f"Báo giá {don.ma_don} cần gọi xác nhận",
+                f"Tổng {don.bao_gia_tong:,} đ ≥ ngưỡng — gọi khách xác nhận rồi bấm “Đã xác nhận với khách”.".replace(
+                    ",", "."
+                ),
+                f"/don/{don.ma_don}/",
+            )
+        return xong
+
+    @staticmethod
+    def tong_dai_xac_nhan_gia(nguoi_dung, don: DonSuaChua) -> None:
+        """T12: tổng đài đã gọi xác nhận báo giá vượt ngưỡng."""
+        kiem_tra_vai_tro(nguoi_dung, *GHI_DON)
+        DonSuaChuaDAO._thuc_hien(
+            nguoi_dung, don, lambda d: d.tong_dai_xac_nhan_gia(), "TONG_DAI_XAC_NHAN_GIA"
+        )
+        don.refresh_from_db()
+        if don.tho_id:
+            DichVuThongBao.gui(
+                don.tho.nguoi_dung,
+                f"Báo giá {don.ma_don} đã được xác nhận",
+                "Bắt đầu sửa được rồi.",
+                f"/tho/don/{don.ma_don}/hoan-thanh/",
+            )
+
+    @staticmethod
+    def khach_tu_choi_gia(nguoi_dung, don: DonSuaChua, ly_do: str) -> None:
+        """T13: khách từ chối báo giá (ghi phí kiểm tra nếu cấu hình > 0)."""
+        HienTruongDAO.kiem_tra_tho_cua_don(nguoi_dung, don, cho_quan_tri=True)
+        DonSuaChuaDAO._thuc_hien(
+            nguoi_dung, don, lambda d: d.khach_tu_choi_gia(ly_do), None, {"ly_do": ly_do}
+        )
+        DichVuThongBao.gui(
+            nguoi_dieu_phoi(don), f"Khách từ chối báo giá {don.ma_don}", ly_do, f"/don/{don.ma_don}/"
         )

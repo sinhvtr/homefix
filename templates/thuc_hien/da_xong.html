@@ -1,0 +1,9 @@
+{% extends "base_tho.html" %}
+{% load dinh_dang %}
+{% block title %}Đã hoàn thành {{ don.ma_don }} — HomeFix Thợ{% endblock %}
+{% block tieu_de %}Đã hoàn thành {{ don.ma_don }}{% endblock %}
+{% block noi_dung %}
+<p class="mb-3">Tổng phải thu: <strong>{{ don.tong_tien_phai_thu|tien }}</strong>{% if don.phieu_bao_hanh %} · bảo hành đến {{ don.phieu_bao_hanh.ngay_het_han|date:"d/m/Y" }}{% endif %}</p>
+{% include "tiep_nhan/_sao_chep.html" with ma="tn-cam-on" noi_dung=tin_nhan nhan="Tin nhắn cảm ơn gửi khách" %}
+<a href="{% url 'thuc_hien:trang_chu' %}" class="mt-4 flex min-h-12 items-center justify-center rounded border border-slate-300">Về trang việc</a>
+{% endblock %}

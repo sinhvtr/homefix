@@ -28,12 +28,30 @@
         {% if dang_xu_ly %}<a href="{% url 'huy_don' don.ma_don %}" class="inline-flex min-h-11 items-center rounded border border-red-300 px-3 text-red-700">Hủy đơn</a>{% endif %}
       </div>
     {% endif %}
+    {% if don.cho_tong_dai_xac_nhan_gia and duoc_ghi %}
+      <form method="post" action="{% url 'xac_nhan_gia' don.ma_don %}" class="mt-4 rounded border border-yellow-300 bg-yellow-50 p-3">{% csrf_token %}
+        <p class="mb-2">Báo giá <strong>{{ don.bao_gia_tong|tien }}</strong> từ ngưỡng — gọi khách ({{ don.bao_gia_nguoi_xac_nhan }}) xác nhận rồi bấm:</p>
+        <button class="min-h-11 rounded bg-sky-700 px-4 font-semibold text-white">Đã xác nhận với khách</button>
+      </form>
+    {% endif %}
     {% if don.ds_hang_muc.all %}
       <h3 class="mt-4 font-semibold">Hạng mục</h3>
       <table class="w-full text-left text-sm">
         <thead><tr class="border-b"><th class="p-1">Loại</th><th class="p-1">Mô tả</th><th class="p-1 text-right">SL</th><th class="p-1 text-right">Đơn giá</th><th class="p-1 text-right">Thành tiền</th></tr></thead>
-        <tbody>{% for hm in don.ds_hang_muc.all %}<tr class="border-b"><td class="p-1">{{ hm.get_loai_display }}</td><td class="p-1">{{ hm.mo_ta }}</td><td class="p-1 text-right">{{ hm.so_luong|floatformat:"-2" }}</td><td class="p-1 text-right">{{ hm.don_gia_thuc_te|tien }}</td><td class="p-1 text-right">{{ hm.thanh_tien|tien }}</td></tr>{% endfor %}</tbody>
+        <tbody>{% for hm in don.ds_hang_muc.all %}<tr class="border-b"><td class="p-1">{{ hm.get_loai_display }}{% if hm.ben_chiu_chi_phi != "KHACH" %} <span class="text-xs text-slate-500">({{ hm.get_ben_chiu_chi_phi_display }} chịu)</span>{% endif %}</td><td class="p-1">{{ hm.mo_ta }}{% if hm.la_bao_gia %} <span class="text-xs text-green-700">✓ báo giá</span>{% endif %}</td><td class="p-1 text-right">{{ hm.so_luong|floatformat:"-2" }}</td><td class="p-1 text-right">{{ hm.don_gia_thuc_te|tien }}</td><td class="p-1 text-right">{{ hm.thanh_tien|tien }}</td></tr>{% endfor %}</tbody>
       </table>
+      {% include "thuc_hien/_bang_tien.html" %}
+    {% endif %}
+    {% if ds_anh %}
+      <h3 class="mt-4 font-semibold">Ảnh</h3>
+      <div class="mt-1 flex flex-wrap gap-2">{% for a in ds_anh %}<a href="{% url 'xem_anh' a.pk %}" target="_blank"><img src="{% url 'xem_anh' a.pk %}" alt="{{ a.get_loai_display }}" class="h-24 w-24 rounded object-cover" loading="lazy"></a>{% endfor %}</div>
+    {% endif %}
+    {% if ds_thanh_toan %}
+      <h3 class="mt-4 font-semibold">Thanh toán</h3>
+      <ul class="text-sm">{% for tt in ds_thanh_toan %}<li>{{ tt.thoi_diem_thu }} · {{ tt.so_tien|tien }} · {{ tt.get_hinh_thuc_display }} · {{ tt.get_trang_thai_display }}{% if tt.anh_chung_tu %} · <a href="{% url 'xem_chung_tu' tt.pk %}" class="underline" target="_blank">chứng từ</a>{% endif %}</li>{% endfor %}</ul>
+    {% endif %}
+    {% if phieu_bao_hanh %}
+      <p class="mt-4 rounded bg-teal-50 p-2 text-sm"><strong>{{ phieu_bao_hanh.ma }}</strong>: {{ phieu_bao_hanh.ngay_bat_dau|date:"d/m/Y" }} → {{ phieu_bao_hanh.ngay_het_han|date:"d/m/Y" }} {% if phieu_bao_hanh.con_han %}(còn hạn){% else %}(hết hạn){% endif %}<br>{{ phieu_bao_hanh.dieu_kien }}</p>
     {% endif %}
   </section>
 

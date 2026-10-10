@@ -1,0 +1,43 @@
+{% extends "base_tho.html" %}
+{% load dinh_dang l10n %}
+{% block title %}Hoàn thành {{ don.ma_don }} — HomeFix Thợ{% endblock %}
+{% block tieu_de %}Hoàn thành {{ don.ma_don }}{% endblock %}
+{% block noi_dung %}
+{% if vuot_bao_gia %}<p class="mb-3 rounded border border-red-300 bg-red-50 p-3 text-red-800">Tổng mới vượt báo giá đã duyệt ({{ don.bao_gia_tong|tien }}) hơn 10% — cần khách xác nhận lại.</p>{% endif %}
+
+<h2 class="mb-2 font-bold">1. Hạng mục</h2>
+{% include "thuc_hien/_hang_muc.html" with sua_duoc=True %}
+{% include "thuc_hien/_bang_tien.html" %}
+
+<h2 class="mb-2 mt-6 font-bold">2. Ảnh hiện trường ({{ ds_anh|length }}/{{ so_anh_toi_da }}, tối thiểu {{ so_anh_toi_thieu }})</h2>
+<div class="mb-2 flex flex-wrap gap-2">
+  {% for a in ds_anh %}
+    <div class="text-center"><img src="{% url 'xem_anh' a.pk %}" alt="Ảnh {{ forloop.counter }}" class="h-24 w-24 rounded object-cover">
+      <form method="post">{% csrf_token %}<input type="hidden" name="hanh_dong" value="xoa_anh"><input type="hidden" name="anh" value="{{ a.pk }}"><button class="min-h-11 text-sm text-red-700 underline">Xóa</button></form>
+    </div>
+  {% endfor %}
+</div>
+{% if ds_anh|length < so_anh_toi_da %}
+  <form method="post" enctype="multipart/form-data" class="flex items-center gap-2">{% csrf_token %}<input type="hidden" name="hanh_dong" value="tai_anh">
+    <input type="file" name="anh" accept="image/*" capture="environment" multiple class="flex-1" aria-label="Chụp hoặc chọn ảnh">
+    <button class="min-h-12 rounded bg-slate-800 px-4 font-semibold text-white">Tải ảnh</button>
+  </form>
+{% endif %}
+
+<h2 class="mb-2 mt-6 font-bold">3. Tiền đã thu</h2>
+<form method="post" enctype="multipart/form-data" class="space-y-3 pb-24">{% csrf_token %}
+  <input type="hidden" name="hanh_dong" value="hoan_thanh">
+  <label class="block">Số tiền đã thu (đ)<input name="so_tien" value="{{ tien.tong_tien|unlocalize }}" inputmode="numeric" class="block min-h-14 w-full rounded border border-slate-300 px-3 text-2xl font-bold"></label>
+  <fieldset class="grid grid-cols-1 gap-2">
+    <legend class="mb-1">Hình thức</legend>
+    {% for ma, nhan in hinh_thuc %}
+      <label class="flex min-h-14 items-center gap-3 rounded-lg border-2 border-slate-300 px-3 has-[:checked]:border-sky-700 has-[:checked]:bg-sky-50"><input type="radio" name="hinh_thuc" value="{{ ma }}" required class="h-6 w-6"> <span class="text-lg font-semibold">{{ nhan }}</span></label>
+    {% endfor %}
+  </fieldset>
+  <label class="block">Lý do (bắt buộc nếu số thu khác tổng phải thu)<input name="ly_do_lech" class="block min-h-12 w-full rounded border border-slate-300 px-3"></label>
+  <label class="block text-base">Ảnh chứng từ chuyển khoản (tùy chọn)<input type="file" name="anh_chung_tu" accept="image/*" class="block w-full"></label>
+  <div class="fixed inset-x-0 bottom-16 z-20 bg-white/95 px-4 py-3">
+    <button class="min-h-16 w-full rounded-lg bg-green-600 text-2xl font-bold text-white">HOÀN THÀNH</button>
+  </div>
+</form>
+{% endblock %}

@@ -1,0 +1,33 @@
+{% extends "base_tho.html" %}
+{% block title %}Báo giá {{ don.ma_don }} — HomeFix Thợ{% endblock %}
+{% block tieu_de %}Báo giá {{ don.ma_don }}{% endblock %}
+{% block noi_dung %}
+<p class="mb-3 text-base text-slate-600">{{ don.dich_vu_yeu_cau.ten_dich_vu }} · {{ don.khach_hang.ho_ten|default:"khách" }}{% if don.khach_hang.la_vip %} · <span class="rounded bg-amber-300 px-1">VIP</span>{% endif %}</p>
+
+{% if don.cho_tong_dai_xac_nhan_gia %}
+  <p class="mb-4 rounded border border-yellow-300 bg-yellow-50 p-3">Khách đã đồng ý. Báo giá từ ngưỡng nên đang <strong>chờ tổng đài gọi xác nhận</strong> — bạn sẽ nhận thông báo khi được bắt đầu sửa.</p>
+{% endif %}
+
+{% include "thuc_hien/_hang_muc.html" with sua_duoc=False %}
+{% include "thuc_hien/_bang_tien.html" %}
+
+{% if not don.cho_tong_dai_xac_nhan_gia %}
+<form method="post" enctype="multipart/form-data" class="mt-5 space-y-2 rounded-lg border-2 border-green-600 p-3">{% csrf_token %}
+  <input type="hidden" name="hanh_dong" value="dong_y">
+  <label class="block text-base">Người xác nhận<input name="nguoi_xac_nhan" value="{{ don.khach_hang.ho_ten }}" class="block min-h-12 w-full rounded border border-slate-300 px-2"></label>
+  <label class="block text-base">Ảnh báo giá (tùy chọn)<input type="file" name="anh_bao_gia" accept="image/*" capture="environment" class="block w-full"></label>
+  <button class="min-h-14 w-full rounded-lg bg-green-600 text-xl font-bold text-white">KHÁCH ĐỒNG Ý</button>
+</form>
+{% endif %}
+
+<details class="mt-4">
+  <summary class="min-h-11 cursor-pointer py-2 text-red-700 underline">Khách từ chối</summary>
+  <div class="mt-2 grid gap-2">
+    {% for ly_do in ly_do_tu_choi %}
+      <form method="post">{% csrf_token %}<input type="hidden" name="hanh_dong" value="tu_choi"><input type="hidden" name="ly_do" value="{{ ly_do }}">
+        <button class="min-h-12 w-full rounded border border-slate-300 px-3 text-left">{{ ly_do }}</button>
+      </form>
+    {% endfor %}
+  </div>
+</details>
+{% endblock %}

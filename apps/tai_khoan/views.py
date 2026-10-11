@@ -18,7 +18,7 @@ TRANG_DICH_THEO_VAI_TRO = {
     VaiTro.QUAN_TRI: "tong_dai",
     VaiTro.TONG_DAI: "tong_dai",
     VaiTro.THO: "thuc_hien:trang_chu",
-    VaiTro.KE_TOAN: "ke_toan_doi_soat",
+    VaiTro.KE_TOAN: "tai_chinh:tong_hop",
     VaiTro.GIAM_DOC: "bao_cao",
 }
 

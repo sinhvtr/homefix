@@ -199,6 +199,7 @@ class TiepNhanDAO:
                 mo_ta_su_co=du_lieu.get("mo_ta_su_co", ""),
                 khung_gio_mong_muon=du_lieu.get("khung_gio_mong_muon", ""),
                 da_chot_lich=da_chot_lich,
+                ngay_tiep_nhan=du_lieu.get("ngay_tiep_nhan"),
             )
             if da_chot_lich:  # T2: tạo LichHen trong cùng giao dịch
                 lich = LichHenDAO._tao(nguoi_dung, don, *khoang)

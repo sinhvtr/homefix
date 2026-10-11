@@ -1,4 +1,4 @@
-{% load trang_thai %}
+{% load trang_thai l10n %}
 {% if loi %}
   <p class="text-sm text-red-700" role="alert">{{ loi }}</p>
 {% elif kh %}
@@ -13,14 +13,14 @@
         {% with ma_dc=dc.pk|stringformat:"s" %}
         <div class="mb-2 rounded border border-slate-100 p-2">
           <label class="flex items-start gap-2">
-            <input type="radio" name="dia_chi_id" value="{{ dc.pk }}" class="mt-1 h-5 w-5"
+            <input type="radio" name="dia_chi_id" value="{{ dc.pk|unlocalize }}" class="mt-1 h-5 w-5"
                    {% if chon_dia_chi == ma_dc or not chon_dia_chi and dc.la_mac_dinh %}checked{% endif %}>
             <span>{{ dc.dia_chi_chi_tiet }} <span class="text-slate-500">({{ dc.khu_vuc }})</span>{% if dc.ghi_chu_duong_di %}<br><span class="text-sm text-slate-500">{{ dc.ghi_chu_duong_di }}</span>{% endif %}</span>
           </label>
           {% if dc.ds_thiet_bi.all %}
             <div class="ml-7 mt-1 space-y-1 text-sm">
               {% for tb in dc.ds_thiet_bi.all %}
-                <label class="flex items-center gap-2"><input type="checkbox" name="thiet_bi_ids" value="{{ tb.pk }}" class="h-5 w-5" {% if tb.pk|stringformat:"s" in chon_thiet_bi %}checked{% endif %}> {{ tb }}</label>
+                <label class="flex items-center gap-2"><input type="checkbox" name="thiet_bi_ids" value="{{ tb.pk|unlocalize }}" class="h-5 w-5" {% if tb.pk|stringformat:"s" in chon_thiet_bi %}checked{% endif %}> {{ tb }}</label>
               {% endfor %}
             </div>
           {% endif %}
@@ -33,7 +33,10 @@
       <h3 class="mt-3 font-medium">5 đơn gần nhất</h3>
       <ul class="text-sm">
         {% for d in kh.don_gan_nhat %}
-          <li><a href="{% url 'chi_tiet_don' d.ma_don %}" class="font-mono underline" target="_blank">{{ d.ma_don }}</a> {% nhan_trang_thai d.trang_thai %} {{ d.dich_vu_yeu_cau.ten_dich_vu }} · {{ d.ngay_tiep_nhan|date:"d/m/Y" }}</li>
+          <li><a href="{% url 'chi_tiet_don' d.ma_don %}" class="font-mono underline" target="_blank">{{ d.ma_don }}</a> {% nhan_trang_thai d.trang_thai %} {{ d.dich_vu_yeu_cau.ten_dich_vu }} · {{ d.ngay_tiep_nhan|date:"d/m/Y" }}
+            {% if d.con_han_bao_hanh %}<span class="text-teal-800">· BH đến {{ d.phieu_bao_hanh.ngay_het_han|date:"d/m/Y" }}</span>
+              {% if d.trang_thai == "HOAN_THANH" %}<a href="{% url 'bao_hanh:tao_don_bao_hanh' %}?don_goc={{ d.ma_don }}" class="ml-1 font-semibold text-teal-800 underline">Tạo đơn bảo hành</a>{% endif %}
+            {% endif %}</li>
         {% endfor %}
       </ul>
     {% endif %}

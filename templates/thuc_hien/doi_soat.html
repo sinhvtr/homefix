@@ -1,0 +1,24 @@
+{% extends "base_tho.html" %}
+{% load dinh_dang %}
+{% block title %}Đối soát — HomeFix Thợ{% endblock %}
+{% block tieu_de %}Đối soát{% endblock %}
+{% block noi_dung %}
+{% for p, ds_dong in ds_phieu %}
+  <details class="mb-3 rounded-lg border border-slate-200 p-3"{% if forloop.first %} open{% endif %}>
+    <summary class="min-h-11 cursor-pointer">
+      <span class="font-mono font-semibold">{{ p.ma }}</span> · {{ p.get_trang_thai_display }}<br>
+      <span class="text-base text-slate-600">{{ p.tu_ngay|date:"d/m" }} – {{ p.den_ngay|date:"d/m/Y" }}</span>
+      <span class="block text-xl font-bold{% if p.so_phai_nop < 0 %} text-green-700{% endif %}">{% if p.so_phai_nop >= 0 %}Phải nộp {{ p.so_phai_nop|tien }}{% else %}Công ty trả bạn {{ p.so_phai_nop|tien|slice:"1:" }}{% endif %}</span>
+    </summary>
+    <dl class="mt-2 grid grid-cols-2 gap-1 text-base">
+      <dt>Tiền đã thu</dt><dd class="text-right">{{ p.tong_tien_thu|tien }}</dd>
+      <dt>Vật tư bạn ứng</dt><dd class="text-right">{{ p.tong_vat_tu_ung|tien }}</dd>
+    </dl>
+    <ul class="mt-2 divide-y text-base">
+      {% for d in ds_dong %}<li class="py-1">{{ d.thanh_toan.thoi_diem_thu|date:"d/m" }} · <span class="font-mono">{{ d.thanh_toan.don.ma_don }}</span> · {{ d.thanh_toan.get_hinh_thuc_display }} {{ d.thanh_toan.so_tien|tien }}{% if d.tien_vat_tu %} · vật tư {{ d.tien_vat_tu|tien }}{% endif %}</li>{% endfor %}
+    </ul>
+  </details>
+{% empty %}
+  <p class="text-slate-600">Chưa có phiếu đối soát nào.</p>
+{% endfor %}
+{% endblock %}

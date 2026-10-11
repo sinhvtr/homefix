@@ -18,6 +18,8 @@ urlpatterns = [
     path("don/<ma_don:ma_don>/bao-gia/", views.bao_gia, name="bao_gia"),
     path("don/<ma_don:ma_don>/hoan-thanh/", views.hoan_thanh, name="hoan_thanh"),
     path("don/<ma_don:ma_don>/da-xong/", views.da_xong, name="da_xong"),
+    path("don/<ma_don:ma_don>/nguyen-nhan/", views.nguyen_nhan_bao_hanh, name="nguyen_nhan_bao_hanh"),
+    path("doi-soat/", views.doi_soat, name="doi_soat"),
     path("cai-dat/", views.cai_dat, name="cai_dat"),
     path("cai-dat/gui-thu/", views.gui_thu, name="gui_thu"),
 ]

@@ -1,0 +1,11 @@
+{# UC11/BR05: đơn bảo hành — xác định nguyên nhân trước khi hoàn thành (tay nghề: thợ chịu công; vật tư: công ty chịu) #}
+{% if don.loai_don == "BAO_HANH" %}
+  <section class="mb-4 rounded-lg border-2 border-teal-300 bg-teal-50 p-3">
+    <p class="font-semibold">Đơn bảo hành của {{ don.don_goc.ma_don }} — khách không trả tiền.</p>
+    <p class="text-base">Nguyên nhân: <strong>{{ don.get_nguyen_nhan_bao_hanh_display|default:"Chưa xác định" }}</strong></p>
+    <form method="post" action="{% url 'thuc_hien:nguyen_nhan_bao_hanh' don.ma_don %}" class="mt-2 grid grid-cols-2 gap-2">{% csrf_token %}
+      <button name="nguyen_nhan" value="TAY_NGHE" class="min-h-12 rounded border-2 {% if don.nguyen_nhan_bao_hanh == 'TAY_NGHE' %}border-teal-700 bg-white font-bold{% else %}border-slate-300{% endif %}">Lỗi tay nghề</button>
+      <button name="nguyen_nhan" value="VAT_TU" class="min-h-12 rounded border-2 {% if don.nguyen_nhan_bao_hanh == 'VAT_TU' %}border-teal-700 bg-white font-bold{% else %}border-slate-300{% endif %}">Lỗi vật tư</button>
+    </form>
+  </section>
+{% endif %}

@@ -7,13 +7,13 @@
       <div class="text-base text-slate-600">{{ hm.get_loai_display }} · {{ hm.so_luong|floatformat:"-2" }} × {{ hm.don_gia_thuc_te|tien }}{% if hm.loai == "VAT_TU" %}{% if hm.gia_mua %} · mua {{ hm.gia_mua|tien }}{% endif %} · {{ hm.get_nguoi_ung_display }} ứng{% if hm.co_hoa_don %} · có HĐ{% endif %}{% endif %}{% if hm.ben_chiu_chi_phi != "KHACH" %} · {{ hm.get_ben_chiu_chi_phi_display }} chịu{% endif %}</div>
       {% if sua_duoc %}
         <form method="post" class="mt-2 flex items-end gap-2">{% csrf_token %}
-          <input type="hidden" name="hanh_dong" value="sua"><input type="hidden" name="hang_muc" value="{{ hm.pk }}">
+          <input type="hidden" name="hanh_dong" value="sua"><input type="hidden" name="hang_muc" value="{{ hm.pk|unlocalize }}">
           <label class="text-sm">SL<input name="so_luong" value="{{ hm.so_luong|floatformat:'-2' }}" inputmode="decimal" class="block w-20 min-h-11 rounded border border-slate-300 px-2"></label>
           <label class="text-sm">Đơn giá<input name="don_gia" value="{{ hm.don_gia_thuc_te|unlocalize }}" inputmode="numeric" class="block w-32 min-h-11 rounded border border-slate-300 px-2"></label>
           <button class="min-h-11 rounded border border-slate-300 px-3">Lưu</button>
         </form>
       {% endif %}
-      <form method="post" class="mt-1">{% csrf_token %}<input type="hidden" name="hanh_dong" value="xoa"><input type="hidden" name="hang_muc" value="{{ hm.pk }}"><button class="min-h-11 text-red-700 underline">Xóa dòng</button></form>
+      <form method="post" class="mt-1">{% csrf_token %}<input type="hidden" name="hanh_dong" value="xoa"><input type="hidden" name="hang_muc" value="{{ hm.pk|unlocalize }}"><button class="min-h-11 text-red-700 underline">Xóa dòng</button></form>
     </li>
   {% empty %}<li class="p-3 text-slate-500">Chưa có hạng mục.</li>
   {% endfor %}
@@ -23,7 +23,7 @@
   <summary class="min-h-11 cursor-pointer py-2 font-semibold">+ Thêm tiền công theo bảng giá</summary>
   <form method="post" class="space-y-2">{% csrf_token %}<input type="hidden" name="hanh_dong" value="them_dich_vu">
     <select name="dich_vu" id="chon-dich-vu" class="block min-h-12 w-full rounded border border-slate-300 px-2" aria-label="Dịch vụ">
-      {% for dv in ds_dich_vu %}<option value="{{ dv.pk }}" data-gia="{{ dv.don_gia_tham_khao|unlocalize }}"{% if dv.pk == don.dich_vu_yeu_cau_id %} selected{% endif %}>{{ dv.ten_dich_vu }} — {{ dv.don_gia_tham_khao|tien }}</option>{% endfor %}
+      {% for dv in ds_dich_vu %}<option value="{{ dv.pk|unlocalize }}" data-gia="{{ dv.don_gia_tham_khao|unlocalize }}"{% if dv.pk == don.dich_vu_yeu_cau_id %} selected{% endif %}>{{ dv.ten_dich_vu }} — {{ dv.don_gia_tham_khao|tien }}</option>{% endfor %}
     </select>
     <div class="flex gap-2">
       <label class="text-sm">SL<input name="so_luong" value="1" inputmode="decimal" class="block w-20 min-h-12 rounded border border-slate-300 px-2"></label>

@@ -22,6 +22,7 @@ from apps.don_sua_chua.dao import SO_ANH_TOI_DA, HienTruongDAO
 from apps.don_sua_chua.models import AnhHienTruong, DonSuaChua, HangMucSuaChua
 from apps.don_sua_chua.trang_thai import ChuyenTrangThaiKhongHopLe, TrangThaiDon
 from apps.he_thong.cau_hinh import cau_hinh
+from apps.tai_chinh.dao import DoiSoatDAO
 from apps.tai_chinh.models import ThanhToan
 from apps.tai_khoan.models import VaiTro
 from apps.tai_khoan.phan_quyen import THO, VAN_PHONG, co_vai_tro, yeu_cau_vai_tro
@@ -447,6 +448,32 @@ def da_xong(request, ma_don):
     if d is None:
         raise Http404
     return render(request, "thuc_hien/da_xong.html", {"don": d, "tin_nhan": tin_nhan_cam_on(d)})
+
+
+@require_POST
+@yeu_cau_vai_tro(THO)
+def nguyen_nhan_bao_hanh(request, ma_don):
+    """UC11: thợ xác định nguyên nhân đơn bảo hành (tay nghề / vật tư) trước khi hoàn thành."""
+    d = _don_cua_toi(request, ma_don)
+    try:
+        HoanThanhDAO.xac_dinh_nguyen_nhan_bao_hanh(request.user, d, request.POST.get("nguyen_nhan", ""))
+        messages.success(request, "Đã ghi nguyên nhân bảo hành.")
+    except (ValidationError, ChuyenTrangThaiKhongHopLe) as loi:
+        _bao_loi(request, loi)
+    if d.trang_thai == TrangThaiDon.DANG_SUA:
+        return redirect("thuc_hien:hoan_thanh", ma_don=ma_don)
+    return redirect("thuc_hien:don", ma_don=ma_don)
+
+
+@yeu_cau_vai_tro(THO)
+def doi_soat(request):
+    """UC12: thợ xem phiếu đối soát của mình (SPEC 3.1: R của mình) kèm các khoản trong phiếu."""
+    ds = DoiSoatDAO.danh_sach_phieu(request.user)
+    return render(
+        request,
+        "thuc_hien/doi_soat.html",
+        {"ds_phieu": [(p, DoiSoatDAO.dong_cua_phieu(p)) for p in ds[:12]]},
+    )
 
 
 # ------------------------------------------------------------------ ảnh phục vụ qua view có kiểm quyền (NFR04)

@@ -3,6 +3,7 @@
 {% block title %}Hoàn thành {{ don.ma_don }} — HomeFix Thợ{% endblock %}
 {% block tieu_de %}Hoàn thành {{ don.ma_don }}{% endblock %}
 {% block noi_dung %}
+{% include "thuc_hien/_nguyen_nhan.html" %}
 {% if vuot_bao_gia %}<p class="mb-3 rounded border border-red-300 bg-red-50 p-3 text-red-800">Tổng mới vượt báo giá đã duyệt ({{ don.bao_gia_tong|tien }}) hơn 10% — cần khách xác nhận lại.</p>{% endif %}
 
 <h2 class="mb-2 font-bold">1. Hạng mục</h2>
@@ -13,7 +14,7 @@
 <div class="mb-2 flex flex-wrap gap-2">
   {% for a in ds_anh %}
     <div class="text-center"><img src="{% url 'xem_anh' a.pk %}" alt="Ảnh {{ forloop.counter }}" class="h-24 w-24 rounded object-cover">
-      <form method="post">{% csrf_token %}<input type="hidden" name="hanh_dong" value="xoa_anh"><input type="hidden" name="anh" value="{{ a.pk }}"><button class="min-h-11 text-sm text-red-700 underline">Xóa</button></form>
+      <form method="post">{% csrf_token %}<input type="hidden" name="hanh_dong" value="xoa_anh"><input type="hidden" name="anh" value="{{ a.pk|unlocalize }}"><button class="min-h-11 text-sm text-red-700 underline">Xóa</button></form>
     </div>
   {% endfor %}
 </div>

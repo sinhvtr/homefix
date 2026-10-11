@@ -1,5 +1,6 @@
 """ThanhToan (P4), PhieuDoiSoat (P5) — UC09, UC12."""
 
+from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
@@ -12,6 +13,51 @@ def duong_dan_chung_tu(_, ten_goc: str) -> str:
     import uuid
 
     return f"chung_tu/{timezone.localtime():%Y/%m}/{uuid.uuid4().hex}.jpg"
+
+
+class PhieuDoiSoat(MoHinhCoBan):
+    """Phiếu đối soát tiền thợ đã thu (UC12, SPEC 5.2). so_phai_nop âm = công ty phải trả thợ."""
+
+    class TrangThai(models.TextChoices):
+        NHAP = "NHAP", "Nháp"
+        DA_CHOT = "DA_CHOT", "Đã chốt"
+        DA_NOP = "DA_NOP", "Đã nộp"
+
+    ma = models.CharField("mã", max_length=30, unique=True)  # DS-yyMM-<mã thợ>-n
+    tho = models.ForeignKey(
+        Tho, verbose_name="thợ", on_delete=models.PROTECT, related_name="ds_phieu_doi_soat"
+    )
+    tu_ngay = models.DateField("từ ngày")
+    den_ngay = models.DateField("đến ngày")
+    tong_tien_thu = models.BigIntegerField("tổng tiền thu (đ)", default=0)
+    tong_vat_tu_ung = models.BigIntegerField("tổng vật tư thợ ứng (đ)", default=0)
+    so_phai_nop = models.BigIntegerField("số phải nộp (đ)", default=0)
+    trang_thai = models.CharField(
+        "trạng thái", max_length=8, choices=TrangThai.choices, default=TrangThai.NHAP
+    )
+    nguoi_lap = models.ForeignKey(
+        settings.AUTH_USER_MODEL, verbose_name="người lập", on_delete=models.PROTECT, related_name="+"
+    )
+    xac_nhan_luc = models.DateTimeField("xác nhận nộp lúc", null=True, blank=True)
+    ghi_chu = models.TextField("ghi chú", blank=True)
+
+    class Meta:
+        db_table = "tblPhieuDoiSoat"
+        verbose_name = "phiếu đối soát"
+        verbose_name_plural = "phiếu đối soát"
+        ordering = ["-tao_luc", "-id"]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(den_ngay__gte=models.F("tu_ngay")), name="doi_soat_den_sau_tu"
+            ),
+            models.CheckConstraint(
+                condition=models.Q(so_phai_nop=models.F("tong_tien_thu") - models.F("tong_vat_tu_ung")),
+                name="doi_soat_so_phai_nop_khop",
+            ),
+        ]
+
+    def __str__(self):
+        return self.ma
 
 
 class ThanhToan(MoHinhCoBan):
@@ -36,6 +82,15 @@ class ThanhToan(MoHinhCoBan):
     thoi_diem_thu = models.DateTimeField("thời điểm thu", default=timezone.now)
     trang_thai = models.CharField("trạng thái", max_length=14, choices=TrangThai.choices)
     anh_chung_tu = models.ImageField("ảnh chứng từ", upload_to=duong_dan_chung_tu, blank=True)
+    # Khóa ngoại → một ThanhToan chỉ nằm ở tối đa MỘT phiếu đối soát (UC12, nghiệm thu P5)
+    phieu_doi_soat = models.ForeignKey(
+        PhieuDoiSoat,
+        verbose_name="phiếu đối soát",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="ds_thanh_toan",
+    )
 
     class Meta:
         db_table = "tblThanhToan"

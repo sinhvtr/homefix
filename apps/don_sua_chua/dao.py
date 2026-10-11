@@ -34,8 +34,15 @@ def sinh_ma_don(ngay: date | None = None) -> str:
     return f"HF{ngay:%y%m%d}-{cap_so_thu_tu(ngay):03d}"
 
 
+KET_THUC_DON_BAO_HANH = frozenset({T.HOAN_THANH, T.DA_HUY})
+
+
 def ghi_doi_trang_thai(nguoi_dung, don: DonSuaChua, ly_do: str = "") -> None:
-    """Ghi nhật ký lần chuyển trạng thái gần nhất của đơn (nếu có)."""
+    """Ghi nhật ký lần chuyển trạng thái gần nhất của đơn (nếu có).
+
+    Mọi đường đổi trạng thái trong DAO/tác vụ đều đi qua đây (trong giao dịch của bên gọi), nên T17 cài tại đây:
+    đơn bảo hành con vừa hoàn thành hoặc bị hủy (T15, T13, T14, T5) → đơn gốc đang bảo hành về HOAN_THANH (A-77).
+    """
     if not don._chuyen_gan_nhat:
         return
     ma, tu, den = don._chuyen_gan_nhat
@@ -44,6 +51,12 @@ def ghi_doi_trang_thai(nguoi_dung, don: DonSuaChua, ly_do: str = "") -> None:
         sau["ly_do"] = ly_do
     ghi_nhat_ky(nguoi_dung, "DOI_TRANG_THAI", don, {"trang_thai": tu}, sau)
     don._chuyen_gan_nhat = None
+    if don.loai_don == DonSuaChua.LoaiDon.BAO_HANH and den in KET_THUC_DON_BAO_HANH and don.don_goc_id:
+        with transaction.atomic():
+            goc = DonSuaChua.objects.select_for_update().get(pk=don.don_goc_id)
+            if goc.trang_thai == T.DANG_BAO_HANH:
+                goc.ket_thuc_bao_hanh()
+                ghi_doi_trang_thai(nguoi_dung, goc, f"Đơn bảo hành {don.ma_don} kết thúc")
 
 
 def _lich_hen_prefetch():
@@ -217,12 +230,16 @@ class DonSuaChuaDAO:
         khung_gio_mong_muon: str = "",
         loai_don: str = DonSuaChua.LoaiDon.THUONG,
         don_goc: DonSuaChua | None = None,
+        ngay_tiep_nhan=None,
     ) -> DonSuaChua:
-        """Tạo đơn (T1/T2). Với T2, bên gọi (TiepNhanDAO) tạo LichHen trong cùng giao dịch."""
+        """Tạo đơn (T1/T2). Với T2, bên gọi (TiepNhanDAO) tạo LichHen trong cùng giao dịch.
+        `ngay_tiep_nhan` mặc định bây giờ; truyền vào khi ghi lại đơn đã nhận trước đó (dữ liệu mẫu — A-83)."""
         kiem_tra_vai_tro(nguoi_dung, *GHI_DON)
+        ngay_tiep_nhan = ngay_tiep_nhan or timezone.now()
         with transaction.atomic():
             don = DonSuaChua(
-                ma_don=sinh_ma_don(),
+                ma_don=sinh_ma_don(timezone.localdate(ngay_tiep_nhan)),
+                ngay_tiep_nhan=ngay_tiep_nhan,
                 khach_hang=khach_hang,
                 dia_chi=dia_chi,
                 dich_vu_yeu_cau=dich_vu,
@@ -324,6 +341,25 @@ class DonSuaChuaDAO:
             d.save(update_fields=["canh_bao_chua_cu_duoc", "ly_do_chua_cu_duoc", "cap_nhat_luc"])
 
         DonSuaChuaDAO._thuc_hien(nguoi_dung, don, lam, "CHUA_CU_DUOC_THO", {"ly_do": ly_do.strip()})
+
+    @staticmethod
+    def xac_dinh_nguyen_nhan_bao_hanh(nguoi_dung, don: DonSuaChua, nguyen_nhan: str) -> None:
+        """UC11: thợ phụ trách hoặc tổng đài xác định nguyên nhân (TAY_NGHE/VAT_TU) trước khi hoàn thành (BR05)."""
+        if not co_vai_tro(nguoi_dung, *GHI_DON):
+            HienTruongDAO.kiem_tra_tho_cua_don(nguoi_dung, don)
+
+        def lam(d):
+            truoc = d.nguyen_nhan_bao_hanh
+            d.xac_dinh_nguyen_nhan(nguyen_nhan)
+            ghi_nhat_ky(
+                nguoi_dung,
+                "NGUYEN_NHAN_BAO_HANH",
+                d,
+                {"nguyen_nhan_bao_hanh": truoc},
+                {"nguyen_nhan_bao_hanh": nguyen_nhan},
+            )
+
+        DonSuaChuaDAO._thuc_hien(nguoi_dung, don, lam)
 
     @staticmethod
     def khach_giuc(nguoi_dung, don: DonSuaChua) -> int:

@@ -1,0 +1,20 @@
+{% load dinh_dang %}
+<div class="overflow-x-auto">
+<table class="w-full border-collapse text-left">
+  <thead><tr class="border-b bg-slate-100"><th class="p-2">Mã phiếu</th><th class="p-2">Thợ</th><th class="p-2">Kỳ</th><th class="whitespace-nowrap p-2 text-right">Tiền thu</th><th class="whitespace-nowrap p-2 text-right">Vật tư ứng</th><th class="whitespace-nowrap p-2 text-right">Phải nộp</th><th class="p-2">Trạng thái</th></tr></thead>
+  <tbody>
+  {% for p in ds_phieu %}
+    <tr class="border-b">
+      <td class="p-2 font-mono"><a href="{% url 'tai_chinh:phieu' p.ma %}" class="underline">{{ p.ma }}</a></td>
+      <td class="p-2">{{ p.tho.ho_ten }}</td>
+      <td class="p-2">{{ p.tu_ngay|date:"d/m/Y" }} – {{ p.den_ngay|date:"d/m/Y" }}</td>
+      <td class="whitespace-nowrap p-2 text-right">{{ p.tong_tien_thu|tien }}</td>
+      <td class="whitespace-nowrap p-2 text-right">{{ p.tong_vat_tu_ung|tien }}</td>
+      <td class="whitespace-nowrap p-2 text-right font-semibold">{{ p.so_phai_nop|tien }}</td>
+      <td class="p-2">{{ p.get_trang_thai_display }}{% if p.xac_nhan_luc %} · {{ p.xac_nhan_luc|date:"d/m/Y H:i" }}{% endif %}</td>
+    </tr>
+  {% empty %}<tr><td class="p-2" colspan="7">Chưa có phiếu.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>

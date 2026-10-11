@@ -1,0 +1,56 @@
+{% extends bo_cuc %}
+{% load dinh_dang l10n %}
+{% block title %}Đối soát tiền thợ — HomeFix{% endblock %}
+{% block tieu_de %}Đối soát tiền thợ{% endblock %}
+{% block noi_dung %}
+<section class="mb-6 rounded bg-white p-4">
+  <h2 class="mb-2 text-lg font-semibold">Tổng hợp theo thợ</h2>
+  <p class="mb-2 text-sm text-slate-600">Tiền mặt + chuyển khoản cho thợ chưa nộp, vật tư thợ ứng chưa hoàn. Số âm: công ty phải trả thợ.</p>
+  <div class="overflow-x-auto">
+  <table class="w-full border-collapse text-left">
+    <thead><tr class="border-b bg-slate-100">
+      <th class="p-2">Mã</th><th class="p-2">Thợ</th><th class="whitespace-nowrap p-2 text-right">Tiền chưa nộp</th><th class="whitespace-nowrap p-2 text-right">Vật tư ứng chưa hoàn</th>
+      <th class="whitespace-nowrap p-2 text-right">Số phải nộp</th><th class="whitespace-nowrap p-2 text-right">Khoản cũ nhất</th><th class="p-2">Phiếu nháp / lập phiếu</th>
+    </tr></thead>
+    <tbody>
+    {% for th in bang %}
+      <tr class="border-b">
+        <td class="p-2 font-mono">{{ th.ma_tho }}</td>
+        <td class="p-2">{{ th.tho.ho_ten }}</td>
+        <td class="whitespace-nowrap p-2 text-right">{{ th.tien_chua_nop|tien }}</td>
+        <td class="whitespace-nowrap p-2 text-right">{{ th.vat_tu_chua_hoan|tien }}</td>
+        <td class="whitespace-nowrap p-2 text-right font-semibold{% if th.so_phai_nop < 0 %} text-red-700{% endif %}">{{ th.so_phai_nop|tien }}</td>
+        <td class="whitespace-nowrap p-2 text-right">{% if th.so_ngay_cu_nhat is not None %}{{ th.so_ngay_cu_nhat }} ngày{% else %}—{% endif %}</td>
+        <td class="p-2">
+          {% for p in th.phieu_nhap %}<a href="{% url 'tai_chinh:phieu' p.ma %}" class="mr-2 font-mono underline">{{ p.ma }}</a>{% endfor %}
+          {% if duoc_ghi and th.so_dong_cho_doi_soat %}
+            <form method="post" action="{% url 'tai_chinh:lap_phieu' %}" class="inline">{% csrf_token %}
+              <input type="hidden" name="tho" value="{{ th.tho.pk|unlocalize }}">
+              <button class="min-h-11 rounded bg-sky-700 px-3 font-semibold text-white">Lập phiếu ({{ th.so_dong_cho_doi_soat }} khoản)</button>
+            </form>
+          {% endif %}
+        </td>
+      </tr>
+    {% empty %}<tr><td class="p-2" colspan="7">Không có khoản nào cần đối soát.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<section class="mb-6 rounded bg-white p-4">
+  <h2 class="mb-2 text-lg font-semibold">Xuất dữ liệu cho MISA</h2>
+  <form method="get" action="{% url 'tai_chinh:xuat' %}" class="flex flex-wrap items-end gap-2">
+    <label class="text-sm">Từ ngày<br><input type="date" name="tu" value="{{ xuat_tu|date:'Y-m-d' }}" class="min-h-11 rounded border border-slate-300 px-2"></label>
+    <label class="text-sm">Đến ngày<br><input type="date" name="den" value="{{ xuat_den|date:'Y-m-d' }}" class="min-h-11 rounded border border-slate-300 px-2"></label>
+    <button name="dinh_dang" value="xlsx" class="min-h-11 rounded border border-slate-300 px-4">Tải XLSX</button>
+    <button name="dinh_dang" value="csv" class="min-h-11 rounded border border-slate-300 px-4">Tải CSV</button>
+  </form>
+  <p class="mt-1 text-sm text-slate-500">Mỗi dòng là một phiếu đã xác nhận nộp trong kỳ.</p>
+</section>
+
+<section class="rounded bg-white p-4">
+  <h2 class="mb-2 text-lg font-semibold">Phiếu gần đây</h2>
+  {% include "tai_chinh/_ds_phieu.html" %}
+</section>
+{% endblock %}

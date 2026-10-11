@@ -1,5 +1,5 @@
 {% extends bo_cuc %}
-{% load trang_thai dinh_dang %}
+{% load trang_thai dinh_dang l10n %}
 {% block title %}Cử thợ {{ don.ma_don }} — HomeFix{% endblock %}
 {% block tieu_de %}Cử thợ <a href="{% url 'chi_tiet_don' don.ma_don %}" class="font-mono underline">{{ don.ma_don }}</a> {% nhan_trang_thai don.trang_thai %}{% if don.uu_tien %} <span class="rounded bg-amber-300 px-2 text-base">VIP</span>{% endif %}{% endblock %}
 {% block noi_dung %}
@@ -21,8 +21,8 @@
           </tr></thead>
           <tbody>
           {% for g in phu_hop %}
-            <tr class="border-b align-top" data-tho="{{ g.tho.pk }}">
-              {% if duoc_ghi %}<td class="p-2"><input type="checkbox" name="tho" value="{{ g.tho.pk }}" class="h-5 w-5" {% if g.dang_cho_phan_hoi %}disabled{% endif %} aria-label="Chọn {{ g.tho.ho_ten }}"></td>{% endif %}
+            <tr class="border-b align-top" data-tho="{{ g.tho.pk|unlocalize }}">
+              {% if duoc_ghi %}<td class="p-2"><input type="checkbox" name="tho" value="{{ g.tho.pk|unlocalize }}" class="h-5 w-5" {% if g.dang_cho_phan_hoi %}disabled{% endif %} aria-label="Chọn {{ g.tho.ho_ten }}"></td>{% endif %}
               <td class="p-2"><span class="font-semibold">{{ g.tho.ho_ten }}</span><br><span class="text-slate-500">{{ g.tho.get_hinh_thuc_display }}</span></td>
               <td class="p-2">{% if g.phu_trach_khu_vuc %}<span class="rounded bg-green-100 px-1 text-green-900">✓ {{ don.dia_chi.khu_vuc }}</span><br>{% endif %}<span class="text-slate-500">{{ g.khu_vuc|join:", " }}</span></td>
               <td class="p-2">{{ g.so_viec_trong_ngay }}</td>
@@ -46,7 +46,7 @@
       <details class="mt-4 rounded bg-white p-3">
         <summary class="cursor-pointer font-semibold">Không phù hợp ({{ khong_phu_hop|length }})</summary>
         <ul class="mt-2 space-y-1 text-sm">
-          {% for g in khong_phu_hop %}<li data-tho-loai="{{ g.tho.pk }}"><strong>{{ g.tho.ho_ten }}</strong>: {{ g.ly_do_loai|join:"; " }}</li>{% endfor %}
+          {% for g in khong_phu_hop %}<li data-tho-loai="{{ g.tho.pk|unlocalize }}"><strong>{{ g.tho.ho_ten }}</strong>: {{ g.ly_do_loai|join:"; " }}</li>{% endfor %}
         </ul>
       </details>
     {% elif don.trang_thai == "DA_CO_THO" %}
@@ -74,7 +74,7 @@
             {% if pc.ly_do_tu_choi %}· {{ pc.get_ly_do_tu_choi_display }}{% endif %}{% if pc.ghi_chu %}<br><span class="text-slate-500">{{ pc.ghi_chu }}</span>{% endif %}
             <br><span class="text-xs text-slate-500">{{ pc.thoi_diem_giao }} · {{ pc.nguoi_giao.ho_ten }} · công dự kiến {{ pc.tien_cong_du_kien|tien }}</span>
             {% if duoc_ghi and pc.trang_thai == "CHO_PHAN_HOI" %}
-              <form method="post" class="inline">{% csrf_token %}<input type="hidden" name="hanh_dong" value="thu_hoi"><input type="hidden" name="phan_cong" value="{{ pc.pk }}"><button class="text-red-700 underline">Thu hồi</button></form>
+              <form method="post" class="inline">{% csrf_token %}<input type="hidden" name="hanh_dong" value="thu_hoi"><input type="hidden" name="phan_cong" value="{{ pc.pk|unlocalize }}"><button class="text-red-700 underline">Thu hồi</button></form>
             {% endif %}
           </li>
         {% empty %}<li class="text-slate-500">Chưa gửi đề nghị nào.</li>
@@ -86,7 +86,7 @@
         <summary class="cursor-pointer font-semibold">Thợ đã đồng ý qua điện thoại</summary>
         <form method="post" class="mt-2 space-y-2">{% csrf_token %}<input type="hidden" name="hanh_dong" value="dien_thoai">
           <select name="tho_dien_thoai" class="block w-full min-h-11 rounded border border-slate-300 px-2" aria-label="Thợ">
-            {% for g in phu_hop %}<option value="{{ g.tho.pk }}">{{ g.tho.ho_ten }}</option>{% endfor %}
+            {% for g in phu_hop %}<option value="{{ g.tho.pk|unlocalize }}">{{ g.tho.ho_ten }}</option>{% endfor %}
           </select>
           <textarea name="ghi_chu" rows="2" required placeholder="Ghi chú bắt buộc (gọi lúc nào, thợ nói gì)" class="block w-full rounded border border-slate-300 p-2"></textarea>
           <button class="min-h-11 rounded bg-sky-700 px-4 font-semibold text-white">Ghi nhận đã giao</button>

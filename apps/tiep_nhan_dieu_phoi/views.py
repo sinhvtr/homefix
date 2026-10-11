@@ -130,6 +130,7 @@ def chi_tiet_don(request, ma_don):
     don = _lay_don(request, ma_don)
     duoc_ghi = co_vai_tro(request.user, *GHI_DON)
     lich = don.lich_hieu_luc
+    phieu = getattr(don, "phieu_bao_hanh", None)
     return render(
         request,
         "tiep_nhan/chi_tiet_don.html",
@@ -154,7 +155,13 @@ def chi_tiet_don(request, ma_don):
             "tien": don.bang_tinh_tien(),
             "ds_anh": list(don.ds_anh.all()),
             "ds_thanh_toan": list(don.ds_thanh_toan.all()),
-            "phieu_bao_hanh": getattr(don, "phieu_bao_hanh", None),
+            "phieu_bao_hanh": phieu,
+            "ds_don_bao_hanh": list(don.ds_don_bao_hanh.order_by("ngay_tiep_nhan")),
+            # UC11: lối vào tạo đơn bảo hành từ đơn đã hoàn thành còn hạn bảo hành
+            "co_the_bao_hanh": duoc_ghi
+            and don.trang_thai == T.HOAN_THANH
+            and phieu is not None
+            and phieu.con_han,
         },
     )
 
@@ -245,4 +252,18 @@ def xac_nhan_gia(request, ma_don):
         messages.error(request, str(loi))
     else:
         messages.success(request, "Đã xác nhận báo giá với khách — thợ được báo bắt đầu sửa.")
+    return redirect("chi_tiet_don", ma_don=ma_don)
+
+
+@require_POST
+@yeu_cau_vai_tro(*GHI_DON)
+def nguyen_nhan_bao_hanh(request, ma_don):
+    """UC11: tổng đài xác định nguyên nhân đơn bảo hành (TAY_NGHE/VAT_TU) — BR05 bên chịu chi phí."""
+    don = _lay_don(request, ma_don)
+    try:
+        DonSuaChuaDAO.xac_dinh_nguyen_nhan_bao_hanh(request.user, don, request.POST.get("nguyen_nhan", ""))
+    except ChuyenTrangThaiKhongHopLe as loi:
+        messages.error(request, str(loi))
+    else:
+        messages.success(request, "Đã ghi nguyên nhân bảo hành.")
     return redirect("chi_tiet_don", ma_don=ma_don)

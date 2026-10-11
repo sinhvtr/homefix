@@ -225,8 +225,9 @@ def anh_thu(rong=3000, cao=2000, dinh_dang="JPEG", xoay_exif=None, ten="anh.jpg"
     return SimpleUploadedFile(ten, dem.getvalue(), content_type=f"image/{dinh_dang.lower()}")
 
 
-def don_tho_da_nhan(nhom="VE_SINH_BAO_DUONG", khach=None, don_gia=150_000, **kw):
-    """Đơn DA_CO_THO đi đúng luồng: tạo → chốt lịch → tổng đài gửi đề nghị → thợ nhận. Trả (don, tho, tong_dai)."""
+def don_tho_da_nhan(nhom="VE_SINH_BAO_DUONG", khach=None, don_gia=150_000, tho=None, **kw):
+    """Đơn DA_CO_THO đi đúng luồng: tạo → chốt lịch → tổng đài gửi đề nghị → thợ nhận. Trả (don, tho, tong_dai).
+    Truyền `tho` để nhiều đơn cùng một thợ (đơn trước phải đã xong — không trùng lịch)."""
     from datetime import datetime
     from zoneinfo import ZoneInfo
 
@@ -244,7 +245,48 @@ def don_tho_da_nhan(nhom="VE_SINH_BAO_DUONG", khach=None, don_gia=150_000, **kw)
     don = don_cho_cu_tho(
         ngay_gio=datetime(2099, 6, 1, 8, 0, tzinfo=ZoneInfo("Asia/Ho_Chi_Minh")), dich_vu=dv, dia_chi=dc, **kw
     )
-    tho = tao_tho_phu_hop(dv)
+    if tho is None:
+        tho = tao_tho_phu_hop(dv)
+    else:
+        tho.ky_nang.add(dv)
     PhanCongDAO.gui_de_nghi(tong_dai, don, [tho.pk])
     PhanCongDAO.nhan_viec(tho.nguoi_dung, PhanCong.objects.get(don=don, tho=tho).pk)
+    return DonSuaChua.objects.get(pk=don.pk), tho, tong_dai
+
+
+def don_hoan_thanh(
+    nhom="VE_SINH_BAO_DUONG", so_tien=None, hinh_thuc="TIEN_MAT", vat_tu=(), tho=None, don_gia=150_000, **kw
+):
+    """Đơn đi trọn luồng đến HOAN_THANH qua DAO (đến nơi → [duyệt giá] → vật tư → ảnh → hoàn thành).
+    vat_tu: các bộ (mô tả, số lượng, giá bán, giá mua, người ứng). Trả (don, tho, tong_dai)."""
+    from apps.don_sua_chua.dao import HienTruongDAO
+    from apps.don_sua_chua.models import DonSuaChua
+    from apps.thuc_hien.dao import DonSuaChuaDAO
+
+    don, tho, tong_dai = don_tho_da_nhan(nhom, don_gia=don_gia, tho=tho, **kw)
+    nd = tho.nguoi_dung
+    HienTruongDAO.tho_den_noi(nd, don)
+    if nhom == "SUA_CHUA_THAY_VAT_TU":
+        HienTruongDAO.them_hang_muc(nd, don, {"loai": "CONG", "dich_vu": don.dich_vu_yeu_cau})
+    for mo_ta, so_luong, gia_ban, gia_mua, nguoi_ung in vat_tu:
+        HienTruongDAO.them_hang_muc(
+            nd,
+            don,
+            {
+                "loai": "VAT_TU",
+                "mo_ta": mo_ta,
+                "so_luong": so_luong,
+                "don_gia_thuc_te": gia_ban,
+                "gia_mua": gia_mua,
+                "nguoi_ung": nguoi_ung,
+            },
+        )
+    if nhom == "SUA_CHUA_THAY_VAT_TU":
+        HienTruongDAO.khach_duyet_gia(nd, don, "Chủ nhà")
+    don = DonSuaChua.objects.get(pk=don.pk)
+    if don.loai_don == "BAO_HANH" and don.nguyen_nhan_bao_hanh == "CHUA_XAC_DINH":
+        DonSuaChuaDAO.xac_dinh_nguyen_nhan_bao_hanh(nd, don, "TAY_NGHE")
+        don = DonSuaChua.objects.get(pk=don.pk)
+    HienTruongDAO.luu_anh(nd, don, anh_thu(400, 300))
+    DonSuaChuaDAO.hoan_thanh(nd, don, don.tong_tien if so_tien is None else so_tien, hinh_thuc, "lệch thử")
     return DonSuaChua.objects.get(pk=don.pk), tho, tong_dai

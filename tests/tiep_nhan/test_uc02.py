@@ -278,3 +278,13 @@ def test_xoa_du_lieu_mau_xoa_ca_don_cua_khach_mau():
     tao_don(dia_chi=goc.dia_chi, loai_don="BAO_HANH", don_goc=goc)
     call_command("xoa_du_lieu_mau", "--xac-nhan")
     assert not DonSuaChua.objects.exists() and not KhachHang.objects.exists()
+
+
+def test_id_tu_1000_tro_len_khong_bi_dinh_dang_so_trong_bieu_mau(tong_dai_client):
+    """USE_THOUSAND_SEPARATOR: {{ pk }} ≥ 1000 in ra “12.345” — id trong value/href phải dùng |unlocalize."""
+    kh = KhachHangFactory(so_dien_thoai="0912345678")
+    dc = DiaChiFactory(id=12345, khach_hang=kh)
+    ThietBiFactory(id=23456, dia_chi=dc)
+    noi_dung = tong_dai_client.get("/khach-hang/tra-cuu/", {"sdt": "0912345678"}).content.decode()
+    assert 'value="12345"' in noi_dung and 'value="23456"' in noi_dung
+    assert "12.345" not in noi_dung and "23.456" not in noi_dung

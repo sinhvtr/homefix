@@ -1,0 +1,55 @@
+{% extends bo_cuc %}
+{% load dinh_dang %}
+{% block title %}{{ phieu.ma }} — HomeFix{% endblock %}
+{% block tieu_de %}Phiếu đối soát <span class="font-mono">{{ phieu.ma }}</span> <span class="rounded bg-slate-200 px-2 text-base">{{ phieu.get_trang_thai_display }}</span>{% endblock %}
+{% block noi_dung %}
+<p class="mb-1"><a href="{% url 'tai_chinh:tong_hop' %}" class="underline">← Đối soát</a></p>
+<dl class="mb-4 grid max-w-3xl grid-cols-[12rem_1fr] gap-x-3 gap-y-1 rounded bg-white p-4">
+  <dt class="font-medium">Thợ</dt><dd>{{ phieu.tho.ma_tho }} · {{ phieu.tho.ho_ten }}</dd>
+  <dt class="font-medium">Kỳ</dt><dd>{{ phieu.tu_ngay|date:"d/m/Y" }} – {{ phieu.den_ngay|date:"d/m/Y" }}</dd>
+  <dt class="font-medium">Người lập</dt><dd>{{ phieu.nguoi_lap.ho_ten }} · {{ phieu.tao_luc|date:"d/m/Y H:i" }}</dd>
+  <dt class="font-medium">Tổng tiền thu</dt><dd>{{ phieu.tong_tien_thu|tien }}</dd>
+  <dt class="font-medium">Vật tư thợ ứng</dt><dd>{{ phieu.tong_vat_tu_ung|tien }}</dd>
+  <dt class="font-medium">Số phải nộp</dt><dd class="text-xl font-bold{% if phieu.so_phai_nop < 0 %} text-red-700{% endif %}">{{ phieu.so_phai_nop|tien }}{% if phieu.so_phai_nop < 0 %} (công ty trả thợ){% endif %}</dd>
+  {% if phieu.xac_nhan_luc %}<dt class="font-medium">Xác nhận nộp</dt><dd>{{ phieu.xac_nhan_luc|date:"d/m/Y H:i" }}</dd>{% endif %}
+  {% if phieu.ghi_chu %}<dt class="font-medium">Ghi chú</dt><dd>{{ phieu.ghi_chu }}</dd>{% endif %}
+</dl>
+
+{% with sua_dong=duoc_ghi %}
+<form method="post" class="rounded bg-white p-4">{% csrf_token %}
+  <h2 class="mb-2 text-lg font-semibold">Các khoản{% if phieu.trang_thai == "NHAP" and duoc_ghi %} — bỏ chọn khoản chưa đối chiếu được{% endif %}</h2>
+  <div class="overflow-x-auto">
+  <table class="w-full border-collapse text-left">
+    <thead><tr class="border-b bg-slate-100">{% if phieu.trang_thai == "NHAP" and sua_dong %}<th class="p-2">Chọn</th>{% endif %}<th class="p-2">Ngày thu</th><th class="p-2">Đơn</th><th class="p-2">Hình thức</th><th class="p-2 text-right">Số tiền</th><th class="p-2 text-right">Tính vào phải nộp</th><th class="p-2">Vật tư thợ ứng</th><th class="p-2 text-right">Hoàn vật tư</th></tr></thead>
+    <tbody>
+    {% for d in ds_dong %}{% include "tai_chinh/_dong_phieu.html" with chon=True lien_ket_don=True %}{% endfor %}
+    {% for d in ds_them %}{% include "tai_chinh/_dong_phieu.html" with chon=False lien_ket_don=True %}{% endfor %}
+    {% if not ds_dong and not ds_them %}<tr><td class="p-2" colspan="8">Phiếu chưa có khoản nào.</td></tr>{% endif %}
+    </tbody>
+  </table>
+  </div>
+  {% if phieu.trang_thai == "NHAP" and duoc_ghi %}
+    <div class="mt-3 flex flex-wrap gap-2">
+      <button name="hanh_dong" value="cap_nhat" class="min-h-11 rounded border border-slate-300 px-4">Cập nhật dòng</button>
+      <button name="hanh_dong" value="chot" class="min-h-11 rounded bg-sky-700 px-4 font-semibold text-white">Chốt phiếu</button>
+      <button name="hanh_dong" value="huy" class="min-h-11 rounded border border-red-300 px-4 text-red-700">Bỏ phiếu nháp</button>
+    </div>
+    <p class="mt-1 text-sm text-slate-500">Chốt phiếu theo các khoản đang tích; sau khi chốt không sửa được dòng.</p>
+  {% endif %}
+</form>
+{% endwith %}
+
+{% if duoc_ghi and phieu.trang_thai == "DA_CHOT" %}
+  <form method="post" class="mt-4">{% csrf_token %}
+    <button name="hanh_dong" value="da_nop" class="min-h-11 rounded bg-green-600 px-4 font-semibold text-white">{% if phieu.so_phai_nop >= 0 %}Xác nhận thợ đã nộp {{ phieu.so_phai_nop|tien }}{% else %}Xác nhận đã trả thợ {{ phieu.so_phai_nop|tien|slice:"1:" }}{% endif %}</button>
+  </form>
+{% endif %}
+{% if duoc_ghi and phieu.trang_thai != "NHAP" %}
+  <details class="mt-4 max-w-xl"><summary class="min-h-11 cursor-pointer py-2 text-red-700 underline">Mở lại phiếu</summary>
+    <form method="post" class="mt-2 flex flex-wrap items-end gap-2">{% csrf_token %}<input type="hidden" name="hanh_dong" value="mo_lai">
+      <label class="flex-1 text-sm">Lý do (bắt buộc)<input name="ly_do" required class="block min-h-11 w-full rounded border border-slate-300 px-2"></label>
+      <button class="min-h-11 rounded border border-red-300 px-4 text-red-700">Mở lại về nháp</button>
+    </form>
+  </details>
+{% endif %}
+{% endblock %}

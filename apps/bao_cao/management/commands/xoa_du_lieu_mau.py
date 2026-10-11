@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand, CommandError
 
-from apps.danh_muc.du_lieu_mau import xoa_danh_muc
+from apps.bao_cao.du_lieu_mau import xoa_du_lieu_mau
 
 
 class Command(BaseCommand):
@@ -12,5 +12,5 @@ class Command(BaseCommand):
     def handle(self, *args, xac_nhan=False, **options):
         if not xac_nhan:
             raise CommandError("Thêm --xac-nhan để xóa dữ liệu mẫu.")
-        ket_qua = xoa_danh_muc()
+        ket_qua = xoa_du_lieu_mau()
         self.stdout.write(self.style.SUCCESS(f"Đã xóa dữ liệu mẫu: {ket_qua}"))

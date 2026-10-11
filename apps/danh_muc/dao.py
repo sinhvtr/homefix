@@ -336,7 +336,9 @@ class KhachHangDAO:
         if kh is not None:
             # DonSuaChua thuộc gói lõi (tầng trên) — đọc qua quan hệ ngược, không import.
             kh.don_gan_nhat = list(
-                kh.ds_don.select_related("dich_vu_yeu_cau", "dia_chi").order_by("-ngay_tiep_nhan")[:5]
+                kh.ds_don.select_related("dich_vu_yeu_cau", "dia_chi", "phieu_bao_hanh").order_by(
+                    "-ngay_tiep_nhan"
+                )[:5]
             )
         return kh
 

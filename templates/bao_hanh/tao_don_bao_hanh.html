@@ -1,0 +1,32 @@
+{% extends bo_cuc %}
+{% load trang_thai l10n %}
+{% block title %}Đơn bảo hành cho {{ goc.ma_don }} — HomeFix{% endblock %}
+{% block tieu_de %}Tạo đơn bảo hành / làm lại{% endblock %}
+{% block noi_dung %}
+<section class="mb-4 max-w-2xl rounded bg-white p-4">
+  <h2 class="mb-2 text-lg font-semibold">Đơn gốc <a href="{% url 'chi_tiet_don' goc.ma_don %}" class="font-mono underline">{{ goc.ma_don }}</a> {% nhan_trang_thai goc.trang_thai %}</h2>
+  <dl class="grid grid-cols-[10rem_1fr] gap-x-3 gap-y-1">
+    <dt class="font-medium">Khách</dt><dd>{{ goc.khach_hang.ho_ten|default:"(chưa có tên)" }} · {{ goc.khach_hang.so_dien_thoai }}</dd>
+    <dt class="font-medium">Địa chỉ</dt><dd>{{ goc.dia_chi.dia_chi_chi_tiet }} ({{ goc.dia_chi.khu_vuc }})</dd>
+    <dt class="font-medium">Dịch vụ</dt><dd>{{ goc.dich_vu_yeu_cau.ten_dich_vu }}</dd>
+    <dt class="font-medium">Thiết bị</dt><dd>{% for tb in goc.thiet_bi.all %}{{ tb }}{% if not forloop.last %}; {% endif %}{% empty %}—{% endfor %}</dd>
+    <dt class="font-medium">Thợ đã làm</dt><dd>{{ goc.tho.ho_ten|default:"—" }}</dd>
+    {% if phieu %}<dt class="font-medium">Phiếu bảo hành</dt><dd>{{ phieu.ma }}: đến hết {{ phieu.ngay_het_han|date:"d/m/Y" }} {% if phieu.con_han %}<span class="text-green-700">(còn hạn)</span>{% else %}<span class="text-red-700">(hết hạn)</span>{% endif %}</dd>{% endif %}
+  </dl>
+</section>
+
+{% if loi_goc %}
+  <div class="max-w-2xl rounded border border-red-300 bg-red-50 p-4 text-red-800" role="alert">
+    <p>{{ loi_goc }}</p>
+    <a href="{% url 'tiep_nhan' %}?sdt={{ goc.khach_hang.so_dien_thoai }}&dia_chi={{ goc.dia_chi_id|unlocalize }}" class="mt-2 inline-flex min-h-11 items-center rounded bg-sky-700 px-4 font-semibold text-white">Tạo đơn thường</a>
+  </div>
+{% else %}
+  <form method="post" class="max-w-2xl space-y-4 rounded bg-white p-4" novalidate>{% csrf_token %}
+    <p class="rounded bg-teal-50 p-2 text-sm">Đơn mới cùng khách, địa chỉ, thiết bị, dịch vụ; khách trả 0 đ. Nguyên nhân (tay nghề / vật tư) xác định trước khi hoàn thành. Thời hạn bảo hành của đơn gốc không được gia hạn.</p>
+    {% if form.non_field_errors %}<div class="rounded border border-red-300 bg-red-50 px-3 py-2 text-red-800" role="alert">{% for loi in form.non_field_errors %}<p>{{ loi }}</p>{% endfor %}</div>{% endif %}
+    {% for truong in form %}{% include "chung/_truong.html" %}{% endfor %}
+    <p class="text-sm text-slate-500">Để trống ngày hẹn nếu khách chưa chốt giờ (đơn chờ xác nhận lịch).</p>
+    <button class="min-h-11 rounded bg-sky-700 px-5 font-semibold text-white">Tạo đơn bảo hành</button>
+  </form>
+{% endif %}
+{% endblock %}

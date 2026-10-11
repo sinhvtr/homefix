@@ -117,7 +117,9 @@ def _ten(rng: random.Random) -> str:
 
 
 def _nguoi_dung(sdt: str, ho_ten: str, vai_tro: str, bi_mat: str) -> NguoiDung:
-    nd = NguoiDung(username=sdt, so_dien_thoai=sdt, ho_ten=ho_ten, vai_tro=vai_tro, phai_doi_mat_khau=False)
+    """Tài khoản mẫu bị khóa từ lần xóa trước (vì đã có nhật ký — A-33) được dùng lại: mở khóa, mật khẩu mới."""
+    nd = NguoiDung.objects.filter(so_dien_thoai=sdt).first() or NguoiDung(so_dien_thoai=sdt)
+    nd.username, nd.ho_ten, nd.vai_tro, nd.phai_doi_mat_khau, nd.is_active = sdt, ho_ten, vai_tro, False, True
     nd.set_password(bi_mat)
     nd.save()
     return nd
@@ -125,7 +127,10 @@ def _nguoi_dung(sdt: str, ho_ten: str, vai_tro: str, bi_mat: str) -> NguoiDung:
 
 def nap_danh_muc(hat_giong: int = 2026) -> list[tuple[str, str, str, str]]:
     """Nạp danh mục mẫu. Trả danh sách (vai trò, họ tên, tên đăng nhập, mật khẩu/PIN) để in MỘT lần."""
-    if NguoiDung.objects.filter(so_dien_thoai__startswith=TIEN_TO_SDT).exists():
+    if (
+        NguoiDung.objects.filter(so_dien_thoai__startswith=TIEN_TO_SDT, is_active=True).exists()
+        or KhachHang.objects.filter(so_dien_thoai__startswith=TIEN_TO_SDT).exists()
+    ):
         raise DaCoDuLieuMau("Đã có dữ liệu mẫu. Chạy `python manage.py xoa_du_lieu_mau --xac-nhan` trước.")
     rng = random.Random(hat_giong)
     tai_khoan: list[tuple[str, str, str, str]] = []

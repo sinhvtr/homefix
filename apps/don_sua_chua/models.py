@@ -344,6 +344,13 @@ class DonSuaChua(MoHinhCoBan):
             raise ChuyenTrangThaiKhongHopLe("Cần nhập số tiền đã thu (≥ 0).")
         if so_anh < cau_hinh("SO_ANH_TOI_THIEU_KHI_HOAN_THANH"):
             raise ChuyenTrangThaiKhongHopLe("Chưa đủ ảnh hiện trường.")
+        if self.loai_don == self.LoaiDon.BAO_HANH and self.nguyen_nhan_bao_hanh in (
+            None,
+            self.NguyenNhanBaoHanh.CHUA_XAC_DINH,
+        ):
+            raise ChuyenTrangThaiKhongHopLe(
+                "Đơn bảo hành: xác định nguyên nhân (tay nghề / vật tư) trước khi hoàn thành."
+            )
         self._chuyen(SuKien.HOAN_THANH)
         self.tong_tien_phai_thu = self.tong_tien
         self._luu(["tong_tien_phai_thu"])
@@ -387,6 +394,21 @@ class DonSuaChua(MoHinhCoBan):
         self._luu()
 
     # ------------------------------------------------------------ tiện ích
+
+    def xac_dinh_nguyen_nhan(self, nguyen_nhan: str) -> None:
+        """UC11/BR05: đặt nguyên nhân bảo hành và tính lại bên chịu chi phí của mọi dòng (không bao giờ là KHACH)."""
+        if self.loai_don != self.LoaiDon.BAO_HANH:
+            raise ChuyenTrangThaiKhongHopLe("Chỉ đơn bảo hành mới có nguyên nhân bảo hành.")
+        if nguyen_nhan not in (self.NguyenNhanBaoHanh.TAY_NGHE, self.NguyenNhanBaoHanh.VAT_TU):
+            raise ChuyenTrangThaiKhongHopLe("Chọn nguyên nhân: tay nghề hoặc vật tư.")
+        if not self.dang_xu_ly:
+            raise ChuyenTrangThaiKhongHopLe("Đơn đã kết thúc, không đổi nguyên nhân được.")
+        self.nguyen_nhan_bao_hanh = nguyen_nhan
+        self.save(update_fields=["nguyen_nhan_bao_hanh", "cap_nhat_luc"])
+        for loai in HangMucSuaChua.Loai.values:
+            self.ds_hang_muc.filter(loai=loai).update(
+                ben_chiu_chi_phi=self.ben_chiu_mac_dinh(loai), cap_nhat_luc=timezone.now()
+            )
 
     def ben_chiu_mac_dinh(self, loai: str) -> str:
         """BR05: đơn thường → khách chịu; đơn bảo hành không thu khách (tay nghề: thợ chịu công; còn lại công ty)."""

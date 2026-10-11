@@ -2,6 +2,7 @@
 {% block title %}{{ don.ma_don }} — HomeFix Thợ{% endblock %}
 {% block tieu_de %}{{ don.ma_don }}{% endblock %}
 {% block noi_dung %}
+{% if don.dang_xu_ly %}{% include "thuc_hien/_nguyen_nhan.html" %}{% endif %}
 <dl class="space-y-2">
   <div><dt class="text-base text-slate-500">Khung giờ</dt><dd class="font-semibold">{% if lich %}{{ lich.khung_gio }}{% else %}—{% endif %}</dd></div>
   <div><dt class="text-base text-slate-500">Khách</dt><dd>{{ don.khach_hang.ho_ten|default:"(chưa có tên)" }}</dd></div>

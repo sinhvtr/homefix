@@ -1,0 +1,13 @@
+{% load dinh_dang l10n %}
+{% with tt=d.thanh_toan %}
+<tr class="border-b{% if not chon %} text-slate-500{% endif %}">
+  {% if phieu.trang_thai == "NHAP" and sua_dong %}<td class="p-2"><input type="checkbox" name="thanh_toan" value="{{ tt.pk|unlocalize }}" class="h-5 w-5"{% if chon %} checked{% endif %} aria-label="Chọn khoản đơn {{ tt.don.ma_don }}"></td>{% endif %}
+  <td class="p-2">{{ tt.thoi_diem_thu|date:"d/m/Y" }}</td>
+  <td class="p-2 font-mono">{% if lien_ket_don %}<a href="{% url 'chi_tiet_don' tt.don.ma_don %}" class="underline">{{ tt.don.ma_don }}</a>{% else %}{{ tt.don.ma_don }}{% endif %}</td>
+  <td class="p-2">{{ tt.get_hinh_thuc_display }}{% if tt.trang_thai == "DA_NOP" %} · đã nộp{% endif %}</td>
+  <td class="whitespace-nowrap p-2 text-right">{{ tt.so_tien|tien }}</td>
+  <td class="whitespace-nowrap p-2 text-right">{{ d.tien_thu|tien }}</td>
+  <td class="p-2 text-sm">{% for hm in d.ds_vat_tu %}{{ hm.mo_ta }} ×{{ hm.so_luong|floatformat:"-2" }}{% if not forloop.last %}; {% endif %}{% empty %}—{% endfor %}</td>
+  <td class="whitespace-nowrap p-2 text-right">{{ d.tien_vat_tu|tien }}</td>
+</tr>
+{% endwith %}

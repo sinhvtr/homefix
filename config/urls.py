@@ -21,12 +21,8 @@ urlpatterns = [
     path("service-worker.js", thuc_hien_views.service_worker, name="service_worker"),
     path("anh/<int:pk>/", thuc_hien_views.xem_anh, name="xem_anh"),
     path("anh/thanh-toan/<int:pk>/", thuc_hien_views.xem_chung_tu, name="xem_chung_tu"),
-    path(
-        "ke-toan/doi-soat/",
-        yeu_cau_vai_tro(KT, QT, GD)(trang_tam),
-        {"tieu_de": "Đối soát tiền thợ"},
-        name="ke_toan_doi_soat",
-    ),
+    path("ke-toan/", include("apps.tai_chinh.urls")),
+    path("bao-hanh/", include("apps.bao_hanh.urls")),
     path("bao-cao/", yeu_cau_vai_tro(QT, KT, GD)(trang_tam), {"tieu_de": "Báo cáo"}, name="bao_cao"),
     path("he-thong-noi-bo/", admin.site.urls),
 ]

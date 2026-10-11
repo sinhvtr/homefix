@@ -76,6 +76,14 @@ MA_TRAN = [
     ("GET", "/tho-lich/", {QT, TD, GD}),
     # Báo giá (P4): tổng đài xác nhận giá vượt ngưỡng (T12). Trang báo giá/hoàn thành của thợ: kiểm thử riêng (404)
     ("POST", "/don/{ma}/xac-nhan-gia/", {QT, TD}),
+    # Bảo hành (P5): tổng đài, quản trị tạo đơn bảo hành; xác định nguyên nhân
+    ("GET", "/bao-hanh/moi/?don_goc={ma}", {QT, TD}),
+    ("POST", "/don/{ma}/nguyen-nhan/", {QT, TD}),
+    # Đối soát (P5): KT CRU; QT, GĐ R; TĐ —; thợ xem phiếu của mình ở /tho/doi-soat/
+    ("GET", "/ke-toan/xuat/?dinh_dang=csv", {QT, KT, GD}),
+    ("GET", "/ke-toan/xuat/?dinh_dang=xlsx", {QT, KT, GD}),
+    ("POST", "/ke-toan/doi-soat/lap/", {KT}),
+    ("GET", "/tho/doi-soat/", {THO}),
     # Màn hình thợ (PWA)
     ("GET", "/tho/cai-dat/", {THO}),
     ("POST", "/tho/san-sang/", {THO}),

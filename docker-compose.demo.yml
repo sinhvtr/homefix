@@ -1,0 +1,27 @@
+# Demo nhanh qua Cloudflare Quick Tunnel (không cần tài khoản, tên miền) — docs/VAN_HANH.md mục 3D.
+# Chạy cấu hình THẬT (gunicorn, DEBUG tắt) + một container cloudflared mở https://<ngẫu-nhiên>.trycloudflare.com.
+# Dùng: make demo  →  make demo-url  →  make demo-tat (rồi `make up` để về cấu hình dev).
+# Bí mật (SECRET_KEY, mật khẩu CSDL…) vẫn lấy từ .env; ở đây chỉ ghi đè vài khóa cho demo.
+x-demo-env: &demo-env
+  DJANGO_ALLOWED_HOSTS: "localhost,127.0.0.1,.trycloudflare.com"
+  DJANGO_CSRF_TRUSTED_ORIGINS: "https://*.trycloudflare.com"
+  DJANGO_COOKIE_SECURE: "1"
+  # Địa chỉ đổi mỗi lần mở tunnel; chỉ dùng cho liên kết trong thông báo
+  SITE_URL: "https://trycloudflare.com"
+  # Thông báo chỉ in log (không gửi Web Push/Telegram thật)
+  THONG_BAO_CHI_CONSOLE: "1"
+
+services:
+  web:
+    environment: *demo-env
+
+  worker:
+    environment: *demo-env
+
+  tunnel:
+    image: cloudflare/cloudflared:2026.9.3
+    command: ["tunnel", "--no-autoupdate", "--url", "http://web:8000"]
+    depends_on:
+      web:
+        condition: service_healthy
+    restart: unless-stopped

@@ -1,4 +1,5 @@
 from django import forms
+from django.utils.choices import CallableChoiceIterator
 
 from apps.danh_muc.models import DichVu, KhuVuc, LoaiThietBi
 from apps.don_sua_chua.models import DonSuaChua
@@ -19,11 +20,16 @@ class DichVuTheoNhomField(forms.ModelChoiceField):
     def __init__(self, **kwargs):
         super().__init__(queryset=DichVu.objects.filter(dang_ap_dung=True), **kwargs)
 
-    def _get_choices(self):
+    def _lua_chon(self):
         nhom: dict[str, list] = {}
         for dv in self.queryset.order_by("loai_thiet_bi", "ten_dich_vu"):
             nhom.setdefault(dv.get_loai_thiet_bi_display(), []).append((dv.pk, dv.ten_dich_vu))
         return [("", "— chọn dịch vụ —"), *nhom.items()]
+
+    def _get_choices(self):
+        # Lười: chỉ truy vấn khi vẽ ô chọn. Truy vấn ngay sẽ chạy lúc import module (khai báo lớp form) →
+        # mọi lệnh manage.py cần CSDL, kể cả lúc build image chưa có CSDL (A-94).
+        return CallableChoiceIterator(self._lua_chon)
 
     choices = property(_get_choices, forms.ChoiceField.choices.fset)
 

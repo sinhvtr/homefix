@@ -24,6 +24,7 @@ Mở <http://localhost:8000/dang-nhap/>. Kiểm tra sức khỏe: <http://localh
 | `make seed` | Nạp dữ liệu mẫu (danh mục, ~60 đơn mọi trạng thái, bảo hành, đối soát) |
 | `make backup` | Sao lưu CSDL ngay vào `backups/` |
 | `make thu-khoi-phuc` | Thử khôi phục bản sao lưu mới nhất vào CSDL tạm, so số dòng (không động vào dữ liệu thật) |
+| `make demo` / `make demo-url` / `make demo-tat` | Demo qua Cloudflare Quick Tunnel: bật, in địa chỉ HTTPS, tắt (docs/VAN_HANH.md mục 3) |
 | `make anh-xa-bang` | Sinh lại `docs/ANH_XA_BANG.md` (lớp ↔ bảng ↔ cột ↔ kiểu) sau khi đổi mô hình |
 
 Chạy kiểm thử ngoài Docker (đã kích hoạt venv, CSDL dev mở ở `127.0.0.1:5433`):

@@ -3,7 +3,7 @@
 DC ?= docker compose
 RUN ?= $(DC) run --rm --no-deps web
 
-.PHONY: up down build logs migrate test check fmt vapid seed backup thu-khoi-phuc anh-xa-bang quan-tri
+.PHONY: up down build logs migrate test check fmt vapid seed backup thu-khoi-phuc anh-xa-bang quan-tri demo demo-url demo-tat
 
 up:
 	$(DC) up -d --build
@@ -49,3 +49,17 @@ anh-xa-bang:
 
 quan-tri:
 	$(DC) exec web python manage.py tao_quan_tri
+
+# ---- Demo qua Cloudflare Quick Tunnel (docs/VAN_HANH.md mục 3D) ----
+# make demo → đợi ~10 giây → make demo-url; make demo-tat tắt tunnel, rồi make up để về cấu hình dev
+DEMO = $(DC) -f docker-compose.yml -f docker-compose.demo.yml
+
+demo:
+	$(DEMO) up -d --build
+
+demo-url:
+	@$(DEMO) logs tunnel 2>&1 | grep -o 'https://[a-z0-9-]*\.trycloudflare\.com' | tail -n1
+
+demo-tat:
+	$(DEMO) stop tunnel
+	$(DEMO) rm -f tunnel

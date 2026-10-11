@@ -191,3 +191,31 @@ def test_huong_dan_cho_tho_va_can_dang_nhap(client, client_vai_tro):
     c = client_vai_tro(VaiTro.THO)
     assert 'id="tho-dien-thoai"' in c.get("/huong-dan/").content.decode()
     assert 'href="/huong-dan/"' in c.get("/tho/cai-dat/").content.decode()
+
+
+def test_lenh_quan_tri_chay_duoc_khi_chua_co_csdl():
+    """Build image (Dockerfile chạy `manage.py tailwind build`) không có CSDL: import URL/form không được truy vấn
+    CSDL (A-94 — trước đây ô chọn dịch vụ ở form tiếp nhận truy vấn ngay lúc khai báo lớp)."""
+    env = {**os.environ, "DATABASE_URL": "postgres://khong:co@127.0.0.1:1/khong_co"}
+    kq = subprocess.run(
+        [sys.executable, "manage.py", "check"],
+        cwd=Path(settings.BASE_DIR),
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=120,
+    )
+    assert kq.returncode == 0, kq.stdout + kq.stderr
+
+
+def test_tep_tinh_khong_tro_toi_source_map_thieu():
+    """CompressedManifestStaticFilesStorage (prod) dừng collectstatic nếu JS/CSS trỏ tới .map không có (A-94)."""
+    import re
+
+    for tep in (Path(settings.BASE_DIR) / "static").rglob("*.*s"):
+        if tep.suffix not in (".js", ".css"):
+            continue
+        for ten in re.findall(
+            r"sourceMappingURL=([^\s*]+)", tep.read_text(encoding="utf-8", errors="ignore")
+        ):
+            assert (tep.parent / ten).exists(), f"{tep.name} trỏ tới {ten} không tồn tại"

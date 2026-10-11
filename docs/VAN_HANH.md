@@ -33,7 +33,7 @@ Tài liệu cho người cài đặt và trông máy chủ (SPEC 14.3). Mọi l�
 6. (Chỉ khi thử nghiệm) dữ liệu mẫu: `make seed` — mật khẩu/PIN in ra **một lần**. Trước khi chạy thật:
    `docker compose exec web python manage.py xoa_du_lieu_mau --xac-nhan`.
 
-## 3. Đưa ra Internet (chọn một)
+## 3. Đưa ra Internet (chọn một; D để demo nhanh)
 
 PWA và Web Push **bắt buộc HTTPS**. Ứng dụng chỉ nghe `127.0.0.1:8000`; HTTPS do tunnel lo.
 
@@ -46,7 +46,21 @@ trỏ `homefix.<ten-mien>` → `http://web:8000`; bật *Always Use HTTPS*.
 **C. Chỉ mạng nội bộ.** Đổi cổng bind thành `0.0.0.0:8000:8000`, đặt `DJANGO_COOKIE_SECURE=0`, truy cập
 `http://<ip-may-chu>:8000`. PWA và Web Push **không** hoạt động — chỉ để thử giao diện tổng đài.
 
-Sau khi có địa chỉ, đặt trong `.env` rồi `docker compose up -d`:
+**D. Demo nhanh — Cloudflare Quick Tunnel (không cần tài khoản, không cần tên miền).** Dùng ngay trên máy dev,
+không sửa `.env`: tệp `docker-compose.demo.yml` chạy cấu hình thật (gunicorn, `DEBUG` tắt, cookie chỉ HTTPS) và một
+container `cloudflared` mở địa chỉ `https://<ngẫu-nhiên>.trycloudflare.com`.
+
+```bash
+make demo        # build + chạy web, worker, db, backup, tunnel
+make demo-url    # in địa chỉ https://….trycloudflare.com (đợi ~10 giây sau make demo)
+make demo-tat    # tắt tunnel (địa chỉ hết hiệu lực); `make up` để về cấu hình dev
+```
+
+Lưu ý: địa chỉ **đổi mỗi lần** bật lại tunnel; không có cam kết uptime (dùng để thử/demo); ai có địa chỉ đều mở được
+trang đăng nhập — chỉ phát tài khoản cho người cần thử, nạp lại dữ liệu mẫu để có mật khẩu mới trước buổi demo;
+thông báo chỉ in log (`THONG_BAO_CHI_CONSOLE=1`). Muốn địa chỉ cố định → cách A.
+
+Sau khi có địa chỉ (cách A–C), đặt trong `.env` rồi `docker compose up -d`:
 
 ```
 DJANGO_ALLOWED_HOSTS=<ten-may>.<tailnet>.ts.net
@@ -129,8 +143,10 @@ Nhật ký chỉ thêm, không sửa/xóa; v1 không tự xóa nhật ký — gi
 - Mật khẩu băm mặc định Django; PIN thợ 6 số, bắt buộc đổi lần đầu; khóa 15 phút sau 5 lần sai.
 - Phân quyền kiểm tra ở cả view lẫn DAO; thợ đoán URL đơn/ảnh của người khác nhận 404 (NFR04).
 - Ảnh không phục vụ công khai (`/media/` không mở) — chỉ qua `/anh/<id>/` có kiểm quyền; EXIF/GPS bị xóa.
-- Thư viện JS/CSS tự host (htmx, Chart.js 4.4.7 — `static/js/chart.umd.min.js`, SHA-256
-  `206b6e8bb00fc7bba2c7ee80ca41db3e9e05ba7be0aa35abeba9cfd5357f5d0e`).
+- Thư viện JS/CSS tự host (htmx, Chart.js 4.4.7 — `static/js/chart.umd.min.js`; bản gốc từ jsDelivr có SHA-256
+  `206b6e8bb00fc7bba2c7ee80ca41db3e9e05ba7be0aa35abeba9cfd5357f5d0e`, đã bỏ dòng cuối `//# sourceMappingURL=…`
+  vì không kèm tệp `.map` — nếu để, `collectstatic` của bản chạy thật báo lỗi; SHA-256 sau khi bỏ:
+  `42f4dbfe70c430ffc22c7128f36cae8d599cac90b8cd37c8f42a59e565e5deb7`).
 - Django Admin chỉ cho superuser kỹ thuật ở `/he-thong-noi-bo/`; tài khoản `QUAN_TRI` không phải superuser.
 
 **Còn để thầy/công ty làm:** rà pháp lý dữ liệu cá nhân (OI-05); thử Web Push thật trên Android qua HTTPS

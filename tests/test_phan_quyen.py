@@ -84,6 +84,10 @@ MA_TRAN = [
     ("GET", "/ke-toan/xuat/?dinh_dang=xlsx", {QT, KT, GD}),
     ("POST", "/ke-toan/doi-soat/lap/", {KT}),
     ("GET", "/tho/doi-soat/", {THO}),
+    # Báo cáo, nhật ký (P6): Báo cáo QT/KT/GĐ (KT chỉ phần tài chính); Nhật ký QT/GĐ
+    ("GET", "/bao-cao/?ky=thang_nay", {QT, KT, GD}),
+    ("GET", "/bao-cao/xuat/", {QT, KT, GD}),
+    ("GET", "/quan-tri/nhat-ky/", {QT, GD}),
     # Màn hình thợ (PWA)
     ("GET", "/tho/cai-dat/", {THO}),
     ("POST", "/tho/san-sang/", {THO}),

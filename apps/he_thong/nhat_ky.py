@@ -1,8 +1,13 @@
 """Ghi nhật ký thao tác (NFR06). Gọi trong DAO, bên trong transaction.atomic() của thao tác ghi."""
 
+from contextvars import ContextVar
+
 from django.db import models
 
 from .models import NhatKyThaoTac
+
+# IP của yêu cầu đang xử lý — DAO không nhận request nên middleware đặt sẵn ở đây (tác vụ nền: None)
+_ip_yeu_cau: ContextVar[str | None] = ContextVar("ip_yeu_cau", default=None)
 
 
 def ten_doi_tuong(doi_tuong) -> str:
@@ -25,6 +30,20 @@ def lay_dia_chi_ip(request) -> str | None:
     return request.META.get("REMOTE_ADDR") or None
 
 
+class GhiIPNhatKyMiddleware:
+    """Đặt IP người dùng cho mọi nhật ký ghi trong yêu cầu này (NFR06: truy vết ai, lúc nào, từ đâu)."""
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        moc = _ip_yeu_cau.set(lay_dia_chi_ip(request))
+        try:
+            return self.get_response(request)
+        finally:
+            _ip_yeu_cau.reset(moc)
+
+
 def ghi_nhat_ky(
     nguoi_dung,
     hanh_dong: str,
@@ -41,5 +60,5 @@ def ghi_nhat_ky(
         doi_tuong=ten_doi_tuong(doi_tuong),
         du_lieu_truoc=du_lieu_truoc,
         du_lieu_sau=du_lieu_sau,
-        dia_chi_ip=dia_chi_ip,
+        dia_chi_ip=dia_chi_ip or _ip_yeu_cau.get(),
     )

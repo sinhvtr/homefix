@@ -1,0 +1,89 @@
+{% extends bo_cuc %}
+{% load static dinh_dang %}
+{% block title %}Báo cáo — HomeFix{% endblock %}
+{% block tieu_de %}Báo cáo vận hành và doanh thu{% endblock %}
+{% block noi_dung %}
+<form method="get" class="mb-4 flex flex-wrap items-end gap-2">
+  {% for ma, nhan in ds_ky %}
+    <label class="inline-flex min-h-11 cursor-pointer items-center gap-1 rounded border border-slate-300 bg-white px-3 has-[:checked]:border-sky-700 has-[:checked]:bg-sky-50">
+      <input type="radio" name="ky" value="{{ ma }}" {% if bc.ky.ma == ma %}checked{% endif %}> {{ nhan }}</label>
+  {% endfor %}
+  <label class="text-sm">Từ<br><input type="date" name="tu" value="{{ bc.ky.tu|date:'Y-m-d' }}" class="min-h-11 rounded border border-slate-300 px-2"></label>
+  <label class="text-sm">Đến<br><input type="date" name="den" value="{{ bc.ky.den|date:'Y-m-d' }}" class="min-h-11 rounded border border-slate-300 px-2"></label>
+  <button class="min-h-11 rounded bg-sky-700 px-4 font-semibold text-white">Xem</button>
+  <a href="{% url 'bao_cao_xuat' %}?{{ chuoi_ky }}" class="inline-flex min-h-11 items-center rounded border border-slate-300 bg-white px-4">Xuất XLSX</a>
+</form>
+<p class="mb-4 text-slate-600">Kỳ: <strong>{{ bc.ky.nhan }}</strong>{% if not bc.xem_van_hanh %} · Kế toán: chỉ hiển thị số liệu tài chính{% endif %}</p>
+
+<section class="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4" aria-label="Chỉ số chính">
+  {% for nhan, gia_tri, phu, vuot in the %}
+    <div class="rounded bg-white p-4{% if vuot %} border-2 border-red-300{% endif %}">
+      <div class="text-sm text-slate-600">{{ nhan }}</div>
+      <div class="text-2xl font-bold{% if vuot %} text-red-700{% endif %}">{{ gia_tri }}</div>
+      {% if phu %}<div class="text-sm text-slate-500">{{ phu }}</div>{% endif %}
+    </div>
+  {% endfor %}
+</section>
+
+<section class="mb-6 grid grid-cols-1 gap-4 xl:grid-cols-2">
+  <div class="rounded bg-white p-4"><h2 class="mb-2 font-semibold">Đơn theo ngày</h2><canvas id="bd-don" height="220" role="img" aria-label="Biểu đồ số đơn tiếp nhận và hoàn thành theo ngày"></canvas></div>
+  <div class="rounded bg-white p-4"><h2 class="mb-2 font-semibold">Doanh thu theo ngày</h2><canvas id="bd-doanh-thu" height="220" role="img" aria-label="Biểu đồ doanh thu theo ngày"></canvas></div>
+</section>
+
+<section class="mb-6 grid grid-cols-1 gap-4 xl:grid-cols-2">
+  {% for tieu_de, cot, ds in bang_doanh_thu %}
+    <div class="rounded bg-white p-4">
+      <h2 class="mb-2 font-semibold">{{ tieu_de }}</h2>
+      <table class="w-full text-left"><thead><tr class="border-b bg-slate-100"><th class="p-2">{{ cot }}</th><th class="p-2 text-right">Số đơn</th><th class="whitespace-nowrap p-2 text-right">Doanh thu</th></tr></thead>
+        <tbody>{% for ten, so, tong in ds %}<tr class="border-b"><td class="p-2">{{ ten }}</td><td class="p-2 text-right">{{ so }}</td><td class="whitespace-nowrap p-2 text-right">{{ tong|tien }}</td></tr>{% empty %}<tr><td class="p-2" colspan="3">Không có đơn hoàn thành trong kỳ.</td></tr>{% endfor %}</tbody></table>
+    </div>
+  {% endfor %}
+  <div class="rounded bg-white p-4">
+    <h2 class="mb-2 font-semibold">Công nợ thợ hiện tại (chưa nộp)</h2>
+    <table class="w-full text-left"><thead><tr class="border-b bg-slate-100"><th class="p-2">Thợ</th><th class="whitespace-nowrap p-2 text-right">Chưa nộp</th></tr></thead>
+      <tbody>{% for ten, tong in bc.cong_no_theo_tho %}<tr class="border-b"><td class="p-2">{{ ten }}</td><td class="whitespace-nowrap p-2 text-right">{{ tong|tien }}</td></tr>{% empty %}<tr><td class="p-2" colspan="2">Không có.</td></tr>{% endfor %}</tbody></table>
+  </div>
+</section>
+
+{% if bc.xem_van_hanh %}
+<section class="mb-6 grid grid-cols-1 gap-4 xl:grid-cols-2">
+  <div class="rounded bg-white p-4">
+    <h2 class="mb-2 font-semibold">Đơn hủy theo lý do (đơn tiếp nhận trong kỳ)</h2>
+    <table class="w-full text-left"><thead><tr class="border-b bg-slate-100"><th class="p-2">Lý do</th><th class="p-2 text-right">Số đơn</th></tr></thead>
+      <tbody>{% for ly_do, so in bc.huy_theo_ly_do %}<tr class="border-b"><td class="p-2">{{ ly_do }}</td><td class="p-2 text-right">{{ so }}</td></tr>{% empty %}<tr><td class="p-2" colspan="2">Không có.</td></tr>{% endfor %}</tbody></table>
+  </div>
+  <div class="rounded bg-white p-4">
+    <h2 class="mb-2 font-semibold">Tỷ lệ làm lại theo thợ</h2>
+    <table class="w-full text-left"><thead><tr class="border-b bg-slate-100"><th class="p-2">Thợ (đơn gốc)</th><th class="p-2 text-right">Bảo hành</th><th class="p-2 text-right">Hoàn thành</th><th class="p-2 text-right">Tỷ lệ</th></tr></thead>
+      <tbody>{% for d in bc.lam_lai_theo_tho %}<tr class="border-b"><td class="p-2">{{ d.ten }}</td><td class="p-2 text-right">{{ d.tu_so }}</td><td class="p-2 text-right">{{ d.mau_so }}</td><td class="p-2 text-right">{{ d.ty_le_hien_thi }}</td></tr>{% empty %}<tr><td class="p-2" colspan="4">Không có.</td></tr>{% endfor %}</tbody></table>
+  </div>
+  <div class="rounded bg-white p-4 xl:col-span-2">
+    <h2 class="mb-2 font-semibold">Đề nghị nhận việc theo thợ (gửi trong kỳ)</h2>
+    <div class="overflow-x-auto"><table class="w-full text-left"><thead><tr class="border-b bg-slate-100"><th class="p-2">Thợ</th><th class="p-2 text-right">Đề nghị</th><th class="p-2 text-right">Nhận</th><th class="p-2 text-right">Từ chối</th><th class="p-2 text-right">Quá hạn</th><th class="p-2 text-right">Đã hủy</th><th class="p-2 text-right">Tỷ lệ nhận</th></tr></thead>
+      <tbody>{% for d in bc.de_nghi_theo_tho %}<tr class="border-b"><td class="p-2">{{ d.tho }}</td><td class="p-2 text-right">{{ d.tong }}</td><td class="p-2 text-right">{{ d.nhan }}</td><td class="p-2 text-right">{{ d.tu_choi }}</td><td class="p-2 text-right">{{ d.qua_han }}</td><td class="p-2 text-right">{{ d.huy }}</td><td class="p-2 text-right">{{ d.ty_le_nhan_hien_thi }}</td></tr>{% empty %}<tr><td class="p-2" colspan="7">Không có đề nghị trong kỳ.</td></tr>{% endfor %}</tbody></table></div>
+  </div>
+</section>
+{% endif %}
+
+{{ bieu_do|json_script:"du-lieu-bieu-do" }}
+<script src="{% static 'js/chart.umd.min.js' %}"></script>
+<script>
+  (function () {
+    const d = JSON.parse(document.getElementById("du-lieu-bieu-do").textContent);
+    const tien = (v) => Number(v).toLocaleString("vi-VN") + " đ";
+    new Chart(document.getElementById("bd-don"), {
+      type: "bar",
+      data: { labels: d.ngay, datasets: [
+        { label: "Tiếp nhận", data: d.tiep_nhan, backgroundColor: "#0369a1" },
+        { label: "Hoàn thành", data: d.hoan_thanh, backgroundColor: "#16a34a" },
+      ] },
+      options: { scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } },
+    });
+    new Chart(document.getElementById("bd-doanh-thu"), {
+      type: "line",
+      data: { labels: d.ngay, datasets: [{ label: "Doanh thu", data: d.doanh_thu, borderColor: "#0369a1", backgroundColor: "#0369a1", tension: 0.2 }] },
+      options: { scales: { y: { beginAtZero: true, ticks: { callback: tien } } }, plugins: { tooltip: { callbacks: { label: (c) => tien(c.parsed.y) } } } },
+    });
+  })();
+</script>
+{% endblock %}

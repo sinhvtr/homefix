@@ -69,6 +69,7 @@ services:
     volumes:
       - ./backups:/backups
       - ./docker/backup/sao_luu.sh:/usr/local/bin/sao_luu.sh:ro
+      - ./docker/backup/thu_khoi_phuc.sh:/usr/local/bin/thu_khoi_phuc.sh:ro
     entrypoint: ["sh", "-c", "echo '0 2 * * * /bin/sh /usr/local/bin/sao_luu.sh' | crontab - && exec crond -f -l 8"]
     depends_on:
       db:

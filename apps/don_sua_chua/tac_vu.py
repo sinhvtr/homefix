@@ -48,7 +48,7 @@ def nhac_xac_nhan_lich(bay_gio=None) -> dict[str, int]:
 
 
 def cap_nhat_khach_vip(bay_gio=None) -> dict[str, int]:
-    """BR07 — hằng ngày 01:00: khách có ≥ VIP_SO_DON_TOI_THIEU đơn đã làm xong trong 365 ngày, hoặc VIP thủ công
+    """BR07 — hằng ngày 01:00: khách có ≥ VIP_SO_DON_TOI_THIEU đơn hoàn thành trong 365 ngày, hoặc VIP thủ công
     (giám đốc giới thiệu) → VIP; hết điều kiện → THUONG. Lũy đẳng; mỗi thay đổi ghi nhật ký."""
     bay_gio = bay_gio or timezone.now()
     nguong = cau_hinh("VIP_SO_DON_TOI_THIEU")
@@ -57,8 +57,10 @@ def cap_nhat_khach_vip(bay_gio=None) -> dict[str, int]:
             "ds_don",
             filter=Q(
                 ds_don__trang_thai__in=TRANG_THAI_DA_LAM_XONG,
-                ds_don__ngay_tiep_nhan__gte=bay_gio - timedelta(days=365),
+                # thời điểm hoàn thành = lúc ghi nhận tiền thu (A-85); ThanhToan ở tầng trên — chỉ dùng tên quan hệ
+                ds_don__ds_thanh_toan__thoi_diem_thu__gte=bay_gio - timedelta(days=365),
             ),
+            distinct=True,
         )
     )
     ket_qua = {"len_vip": 0, "ve_thuong": 0}

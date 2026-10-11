@@ -16,16 +16,22 @@ _QUAN_TRI = [
     ("Nhật ký", "/quan-tri/nhat-ky/"),
 ]
 
+_HUONG_DAN = [("Hướng dẫn", "/huong-dan/")]
+
 MENU = {
     VaiTro.QUAN_TRI: _TONG_DAI
     + _XEM_DANH_MUC
     + [("Đối soát", "/ke-toan/doi-soat/"), ("Báo cáo", "/bao-cao/")]
-    + _QUAN_TRI,
-    VaiTro.TONG_DAI: _TONG_DAI + _XEM_DANH_MUC,
-    VaiTro.KE_TOAN: [("Đối soát", "/ke-toan/doi-soat/"), ("Báo cáo", "/bao-cao/")] + _XEM_DANH_MUC,
+    + _QUAN_TRI
+    + _HUONG_DAN,
+    VaiTro.TONG_DAI: _TONG_DAI + _XEM_DANH_MUC + _HUONG_DAN,
+    VaiTro.KE_TOAN: [("Đối soát", "/ke-toan/doi-soat/"), ("Báo cáo", "/bao-cao/")]
+    + _XEM_DANH_MUC
+    + _HUONG_DAN,
     VaiTro.GIAM_DOC: [("Báo cáo", "/bao-cao/"), _BANG_DON, ("Đối soát", "/ke-toan/doi-soat/")]
     + _XEM_DANH_MUC
-    + _QUAN_TRI,
+    + _QUAN_TRI
+    + _HUONG_DAN,
     VaiTro.THO: [],
 }
 

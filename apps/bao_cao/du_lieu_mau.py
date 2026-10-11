@@ -29,6 +29,7 @@ from apps.tai_chinh.models import PhieuDoiSoat, ThanhToan
 from apps.tai_khoan.models import NguoiDung, VaiTro
 from apps.thuc_hien.dao import DonSuaChuaDAO as HoanThanhDAO
 from apps.tiep_nhan_dieu_phoi.dao import PhanCongDAO, ThoDAO, TiepNhanDAO
+from apps.tiep_nhan_dieu_phoi.models import PhanCong
 
 MO_TA = {
     "DIEU_HOA": ["Điều hòa chảy nước", "Điều hòa không mát", "Điều hòa kêu to", "Bảo dưỡng định kỳ"],
@@ -117,16 +118,29 @@ class _NapDon:
         return TiepNhanDAO.tiep_nhan(self.tong_dai(), du_lieu).don
 
     def cu_tho(self, don: DonSuaChua):
-        """UC04/UC07: gửi đề nghị cho thợ gợi ý đầu bảng (BR04) và thợ nhận. Không có thợ phù hợp → None."""
+        """UC04/UC07: gửi đề nghị cho thợ gợi ý đầu bảng (BR04) và thợ nhận. Không có thợ phù hợp → None.
+        Đôi khi gửi thêm một thợ khác và người này từ chối — cho báo cáo tỷ lệ nhận/từ chối."""
         don = DonSuaChua.objects.get(pk=don.pk)
         hop = [g.tho for g in ThoDAO.goi_y_tho(don) if g.phu_hop][:3]
         if not hop:
             return None
         tho = self.rng.choice(hop)
+        khac = next((t for t in hop if t != tho), None) if self.rng.random() < 0.35 else None
         td = self.tong_dai()
-        if not PhanCongDAO.gui_de_nghi(td, don, [tho.pk]):
+        if tho.pk not in PhanCongDAO.gui_de_nghi(td, don, [tho.pk] + ([khac.pk] if khac else [])):
             return None
+        if khac is not None and (
+            pc_khac := don.ds_phan_cong.filter(tho=khac, trang_thai="CHO_PHAN_HOI").first()
+        ):
+            PhanCongDAO.tu_choi(khac.nguoi_dung, pc_khac.pk, self.rng.choice(["BAN", "XA"]))
         PhanCongDAO.nhan_viec(tho.nguoi_dung, don.ds_phan_cong.get(tho=tho, trang_thai="CHO_PHAN_HOI").pk)
+        # dời mốc đề nghị về lúc tiếp nhận (+ vài chục phút) để báo cáo "tiếp nhận → có thợ" có nghĩa
+        giao = min(don.ngay_tiep_nhan + timedelta(minutes=self.rng.randint(3, 40)), timezone.now())
+        for pc in don.ds_phan_cong.all():
+            phan_hoi = giao + timedelta(minutes=self.rng.randint(1, 14))
+            PhanCong.objects.filter(pk=pc.pk).update(
+                thoi_diem_giao=giao, han_phan_hoi=giao + timedelta(minutes=15), thoi_diem_phan_hoi=phan_hoi
+            )
         return tho
 
     def den_noi_va_bao_gia(self, don, tho, vat_tu=True, duyet=True):
@@ -244,6 +258,13 @@ class _NapDon:
         DonSuaChuaDAO.danh_dau_chua_cu_duoc(
             self.tong_dai(), cho_cu[0], "Không có thợ điện nước rảnh khung giờ này"
         )
+        for d in cho_cu[1:3]:  # đề nghị hết 15 phút không ai nhận (BR02) → thẻ "Cần cử lại" trên bảng đơn
+            hop = [g.tho for g in ThoDAO.goi_y_tho(DonSuaChua.objects.get(pk=d.pk)) if g.phu_hop][:1]
+            if hop and PhanCongDAO.gui_de_nghi(self.tong_dai(), d, [hop[0].pk]):
+                giao = timezone.now() - timedelta(minutes=r.randint(20, 40))
+                PhanCong.objects.filter(don=d, trang_thai="CHO_PHAN_HOI").update(
+                    trang_thai="QUA_HAN", thoi_diem_giao=giao, han_phan_hoi=giao + timedelta(minutes=15)
+                )
         for _ in range(5):  # DA_CO_THO
             self.cu_tho(self.tiep_nhan(0))
         for i in range(3):  # CHO_DUYET_GIA (một đơn vượt ngưỡng chờ tổng đài gọi xác nhận)

@@ -51,6 +51,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "django_htmx.middleware.HtmxMiddleware",
+    "apps.he_thong.nhat_ky.GhiIPNhatKyMiddleware",
     "apps.tai_khoan.middleware.BatDoiMatKhauMiddleware",
     "axes.middleware.AxesMiddleware",
 ]

@@ -415,22 +415,36 @@ def test_quan_tri_duoc_sua_bao_gia(sua_chua, quan_tri):
 
 
 def test_br07_khach_3_don_hoan_thanh_trong_365_ngay_thanh_vip():
+    """A-71 (thầy chốt): đếm đơn đã làm xong theo **thời điểm hoàn thành** (lúc ghi nhận tiền thu — A-85)."""
     from apps.don_sua_chua.tac_vu import cap_nhat_khach_vip
+    from tests.conftest import DiaChiFactory, ThoFactory
 
     kh = KhachHangFactory()
-    from tests.conftest import DiaChiFactory
-
     dc = DiaChiFactory(khach_hang=kh)
-    for tt in ("HOAN_THANH", "DA_DONG"):
-        tao_don(tt, dia_chi=dc)
+    tho = ThoFactory()
+
+    def xong(trang_thai, so_ngay_truoc=0, nhan_truoc=0):
+        d = tao_don(trang_thai, dia_chi=dc)
+        DonSuaChua.objects.filter(pk=d.pk).update(ngay_tiep_nhan=timezone.now() - timedelta(days=nhan_truoc))
+        ThanhToan.objects.create(
+            don=d,
+            tho=tho,
+            so_tien=0,
+            hinh_thuc="TIEN_MAT",
+            trang_thai="KHONG_CAN_NOP",
+            thoi_diem_thu=timezone.now() - timedelta(days=so_ngay_truoc),
+        )
+        return d
+
+    xong("HOAN_THANH")
+    xong("DA_DONG")
     tao_don("DA_HUY", dia_chi=dc)  # đơn hủy không tính
-    cu = tao_don("HOAN_THANH", dia_chi=dc)
-    DonSuaChua.objects.filter(pk=cu.pk).update(
-        ngay_tiep_nhan=timezone.now() - timedelta(days=400)
-    )  # quá 365 ngày
+    xong("HOAN_THANH", so_ngay_truoc=400, nhan_truoc=401)  # hoàn thành quá 365 ngày
     assert kh.so_lan_su_dung_trong_nam == 2
     assert cap_nhat_khach_vip() == {"len_vip": 0, "ve_thuong": 0}
-    tao_don("DANG_BAO_HANH", dia_chi=dc)
+    # nhận cách đây 400 ngày nhưng mới hoàn thành tuần trước → vẫn tính (đổi so với P4)
+    xong("DANG_BAO_HANH", so_ngay_truoc=7, nhan_truoc=400)
+    assert kh.so_lan_su_dung_trong_nam == 3
     assert cap_nhat_khach_vip() == {"len_vip": 1, "ve_thuong": 0}
     kh.refresh_from_db()
     assert kh.la_vip
@@ -443,6 +457,18 @@ def test_br07_khach_3_don_hoan_thanh_trong_365_ngay_thanh_vip():
     kh.refresh_from_db()
     thu_cong.refresh_from_db()
     assert not kh.la_vip and thu_cong.la_vip
+
+
+def test_br07_don_hoan_thanh_nhieu_khoan_thu_chi_dem_mot():
+    from tests.conftest import DiaChiFactory, ThoFactory
+
+    dc = DiaChiFactory()
+    d = tao_don("HOAN_THANH", dia_chi=dc)
+    for _ in range(2):
+        ThanhToan.objects.create(
+            don=d, tho=ThoFactory(), so_tien=0, hinh_thuc="TIEN_MAT", trang_thai="KHONG_CAN_NOP"
+        )
+    assert dc.khach_hang.so_lan_su_dung_trong_nam == 1
 
 
 @pytest.mark.parametrize(("pham_vi", "tong"), [("TIEN_CONG", 470_000), ("CONG_VA_VAT_TU", 450_000)])

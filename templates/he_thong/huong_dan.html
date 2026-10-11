@@ -1,0 +1,10 @@
+{% extends bo_cuc %}
+{% block title %}Hướng dẫn — HomeFix{% endblock %}
+{% block tieu_de %}Hướng dẫn sử dụng{% endblock %}
+{% block noi_dung %}
+<nav class="mb-4 flex flex-wrap gap-2" aria-label="Các phần">
+  {% for ma, ten in muc_luc %}<a href="#{{ ma }}" class="inline-flex min-h-11 items-center rounded border px-3{% if ma == phan_cua_toi %} border-sky-700 bg-sky-50 font-semibold{% else %} border-slate-300 bg-white{% endif %}">{{ ten }}</a>{% endfor %}
+</nav>
+<article class="max-w-3xl rounded bg-white p-4 text-base leading-relaxed">{{ noi_dung }}</article>
+{% if phan_cua_toi %}<script>if (!location.hash && document.getElementById("{{ phan_cua_toi }}")) document.getElementById("{{ phan_cua_toi }}").scrollIntoView();</script>{% endif %}
+{% endblock %}

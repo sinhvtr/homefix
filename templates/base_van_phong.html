@@ -8,7 +8,7 @@
     </div>
     <nav class="flex-1 px-2 space-y-1" aria-label="Chức năng">
       {% for nhan, duong_dan in menu %}
-        <a href="{{ duong_dan }}" class="block rounded px-3 py-2 hover:bg-slate-700{% if request.path == duong_dan %} bg-slate-700 font-semibold{% endif %}">{{ nhan }}</a>
+        <a href="{{ duong_dan }}"{% if duong_dan == "/don/moi/" %} data-phim-tat="n"{% endif %} class="block rounded px-3 py-2 hover:bg-slate-700{% if request.path == duong_dan %} bg-slate-700 font-semibold{% endif %}">{{ nhan }}</a>
       {% endfor %}
     </nav>
     <div class="px-5 py-4 border-t border-slate-700 text-sm">
@@ -31,4 +31,18 @@
     {% block noi_dung %}{% endblock %}
   </main>
 </div>
+<script>
+  // Phím tắt (NFR09 [ĐX]): "/" tới ô tìm kiếm của trang; "n" tạo đơn mới (khi menu có mục này). Bỏ qua khi đang gõ.
+  document.addEventListener("keydown", function (e) {
+    const t = e.target;
+    if (e.ctrlKey || e.metaKey || e.altKey || t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)) return;
+    if (e.key === "/") {
+      const o = document.querySelector('main input[type="search"], main input[name="q"]');
+      if (o) { e.preventDefault(); o.focus(); }
+    } else if (e.key === "n") {
+      const moi = document.querySelector('nav a[data-phim-tat="n"]');  // chỉ có khi vai trò được tạo đơn
+      if (moi) { e.preventDefault(); location.href = moi.href; }
+    }
+  });
+</script>
 {% endblock %}

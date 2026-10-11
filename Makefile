@@ -3,7 +3,7 @@
 DC ?= docker compose
 RUN ?= $(DC) run --rm --no-deps web
 
-.PHONY: up down build logs migrate test check fmt vapid seed backup quan-tri
+.PHONY: up down build logs migrate test check fmt vapid seed backup thu-khoi-phuc anh-xa-bang quan-tri
 
 up:
 	$(DC) up -d --build
@@ -39,6 +39,13 @@ seed:
 
 backup:
 	$(DC) exec backup sh /usr/local/bin/sao_luu.sh
+
+# Nạp bản sao lưu mới nhất vào CSDL tạm, so số dòng, xóa CSDL tạm (không động vào CSDL thật)
+thu-khoi-phuc:
+	$(DC) exec backup sh /usr/local/bin/thu_khoi_phuc.sh
+
+anh-xa-bang:
+	$(RUN) python manage.py sinh_anh_xa_bang
 
 quan-tri:
 	$(DC) exec web python manage.py tao_quan_tri

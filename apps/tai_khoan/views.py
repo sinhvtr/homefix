@@ -1,15 +1,18 @@
+from datetime import date
+
 from django.contrib import messages
 from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth import views as auth_views
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
+from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
 from apps.he_thong.bieu_mau import gan_loi_vao_form
 from apps.he_thong.models import CauHinh
 
-from .dao import CauHinhDAO, NguoiDungDAO
+from .dao import CauHinhDAO, NguoiDungDAO, NhatKyDAO
 from .forms import CauHinhForm, DangNhapForm, DoiMatKhauForm, NguoiDungForm
 from .models import NguoiDung, VaiTro
 from .phan_quyen import CHI_QUAN_TRI, QUAN_TRI_GIAM_DOC, co_vai_tro, yeu_cau_vai_tro
@@ -186,5 +189,41 @@ def cau_hinh_sua(request, pk):
             "tieu_de": f"Sửa cấu hình {ban_ghi.khoa}",
             "ghi_chu": f"{ban_ghi.mo_ta} (kiểu {ban_ghi.get_kieu_display()})",
             "quay_lai": "../../",
+        },
+    )
+
+
+# ---------- Quản trị: nhật ký thao tác (NFR06) ----------
+
+
+@yeu_cau_vai_tro(*QUAN_TRI_GIAM_DOC)
+def nhat_ky(request):
+    """Lọc theo khoảng ngày, hành động, người thao tác, đối tượng (vd. mã đơn); 50 dòng mỗi trang."""
+    g = request.GET
+
+    def ngay(khoa):
+        try:
+            return date.fromisoformat(g.get(khoa, "")) if g.get(khoa) else None
+        except ValueError:
+            return None
+
+    nguoi = g.get("nguoi", "")
+    if nguoi not in ("", "he_thong") and not nguoi.isdigit():
+        nguoi = ""
+    qs = NhatKyDAO.tim(
+        request.user, ngay("tu"), ngay("den"), g.get("hanh_dong", ""), nguoi or None, g.get("doi_tuong", "")
+    )
+    trang = Paginator(qs, 50).get_page(g.get("trang"))
+    tham_so = g.copy()
+    tham_so.pop("trang", None)
+    return render(
+        request,
+        "tai_khoan/nhat_ky.html",
+        {
+            "trang": trang,
+            "loc": g,
+            "ds_hanh_dong": NhatKyDAO.cac_hanh_dong(),
+            "ds_nguoi": NguoiDung.objects.order_by("ho_ten").only("pk", "ho_ten"),
+            "chuoi_loc": tham_so.urlencode(),
         },
     )

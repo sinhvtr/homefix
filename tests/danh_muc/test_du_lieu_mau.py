@@ -64,6 +64,16 @@ def test_nap_du_lieu_mau_phan_don_moi_trang_thai_bao_hanh_doi_soat(capsys):
     assert not PhieuBaoHanh.objects.filter(don__trang_thai="HOAN_THANH", ngay_het_han__lt=hom_nay).exists()
     assert don.filter(uu_tien=True).exists() and don.filter(canh_bao_chua_cu_duoc=True).exists()
     assert don.filter(cho_tong_dai_xac_nhan_gia=True).exists()
+    from apps.tiep_nhan_dieu_phoi.models import PhanCong
+
+    assert {"TU_CHOI", "QUA_HAN", "DA_NHAN"} <= set(PhanCong.objects.values_list("trang_thai", flat=True))
+    # mốc đề nghị dời về ngày tiếp nhận: báo cáo "tiếp nhận → có thợ" không tính bằng ngày
+    for pc in PhanCong.objects.filter(trang_thai="DA_NHAN").select_related("don"):
+        assert (
+            timezone.timedelta(0)
+            <= pc.thoi_diem_phan_hoi - pc.don.ngay_tiep_nhan
+            <= timezone.timedelta(hours=1)
+        )
     assert "Đơn mẫu:" in capsys.readouterr().out
 
 

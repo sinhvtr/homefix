@@ -21,4 +21,5 @@ urlpatterns = [
     ),
     path("quan-tri/cau-hinh/", views.cau_hinh_danh_sach, name="cau_hinh_danh_sach"),
     path("quan-tri/cau-hinh/<int:pk>/sua/", views.cau_hinh_sua, name="cau_hinh_sua"),
+    path("quan-tri/nhat-ky/", views.nhat_ky, name="nhat_ky"),
 ]

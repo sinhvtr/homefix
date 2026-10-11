@@ -3,7 +3,7 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 
 from apps.he_thong.cau_hinh import chuyen_doi
-from apps.he_thong.models import CauHinh
+from apps.he_thong.models import CauHinh, NhatKyThaoTac
 from apps.he_thong.nhat_ky import ghi_nhat_ky
 from apps.he_thong.so_dien_thoai import chuan_hoa_sdt
 
@@ -180,3 +180,32 @@ class CauHinhDAO:
                 {"gia_tri": gia_tri},
             )
         return ban_ghi
+
+
+class NhatKyDAO:
+    """Trang /quan-tri/nhat-ky/ (SPEC 3.1 — Nhật ký thao tác: QT, GĐ R). Chỉ đọc; lưu giữ ≥ 12 tháng (NFR06):
+    v1 không có chức năng xóa nhật ký."""
+
+    @staticmethod
+    def tim(nguoi_dung, tu_ngay=None, den_ngay=None, hanh_dong="", nguoi=None, doi_tuong=""):
+        kiem_tra_vai_tro(nguoi_dung, *QUAN_TRI_GIAM_DOC)
+        qs = NhatKyThaoTac.objects.select_related("nguoi_dung")
+        if tu_ngay:
+            qs = qs.filter(thoi_diem__date__gte=tu_ngay)
+        if den_ngay:
+            qs = qs.filter(thoi_diem__date__lte=den_ngay)
+        if hanh_dong:
+            qs = qs.filter(hanh_dong=hanh_dong)
+        if nguoi == "he_thong":
+            qs = qs.filter(nguoi_dung=None)
+        elif nguoi:
+            qs = qs.filter(nguoi_dung_id=nguoi)
+        if doi_tuong:
+            qs = qs.filter(doi_tuong__icontains=doi_tuong.strip())
+        return qs.order_by("-thoi_diem", "-id")
+
+    @staticmethod
+    def cac_hanh_dong() -> list[str]:
+        return list(
+            NhatKyThaoTac.objects.order_by("hanh_dong").values_list("hanh_dong", flat=True).distinct()
+        )

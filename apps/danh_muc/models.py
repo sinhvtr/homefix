@@ -74,11 +74,17 @@ class KhachHang(MoHinhCoBan):
 
     @property
     def so_lan_su_dung_trong_nam(self) -> int:
-        """Số đơn đã làm xong (HOAN_THANH, DANG_BAO_HANH, DA_DONG) tiếp nhận trong 365 ngày gần nhất (BR07, A-71).
-        DonSuaChua thuộc gói lõi (tầng trên) — đếm qua quan hệ ngược, không import."""
-        return self.ds_don.filter(
-            trang_thai__in=TRANG_THAI_DA_LAM_XONG, ngay_tiep_nhan__gte=timezone.now() - timedelta(days=365)
-        ).count()
+        """Số đơn đã làm xong (HOAN_THANH, DANG_BAO_HANH, DA_DONG) **hoàn thành** trong 365 ngày gần nhất (BR07, A-71).
+        Thời điểm hoàn thành = lúc thợ ghi nhận tiền thu (A-85). Đơn, ThanhToan thuộc tầng trên — đi qua quan hệ
+        ngược, không import."""
+        return (
+            self.ds_don.filter(
+                trang_thai__in=TRANG_THAI_DA_LAM_XONG,
+                ds_thanh_toan__thoi_diem_thu__gte=timezone.now() - timedelta(days=365),
+            )
+            .distinct()
+            .count()
+        )
 
 
 class DiaChi(MoHinhCoBan):

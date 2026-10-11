@@ -1,0 +1,39 @@
+{% extends bo_cuc %}
+{% load l10n %}
+{% block title %}Nhật ký thao tác — HomeFix{% endblock %}
+{% block tieu_de %}Nhật ký thao tác{% endblock %}
+{% block noi_dung %}
+<p class="mb-2 text-sm text-slate-600">Chỉ thêm, không sửa, không xóa (NFR06). Mỗi dòng ghi ai, lúc nào, từ IP nào, dữ liệu trước/sau.</p>
+<form method="get" class="mb-4 flex flex-wrap items-end gap-2">
+  <label class="text-sm">Từ ngày<br><input type="date" name="tu" value="{{ loc.tu }}" class="min-h-11 rounded border border-slate-300 px-2"></label>
+  <label class="text-sm">Đến ngày<br><input type="date" name="den" value="{{ loc.den }}" class="min-h-11 rounded border border-slate-300 px-2"></label>
+  <label class="text-sm">Hành động<br><select name="hanh_dong" class="min-h-11 rounded border border-slate-300 px-2"><option value="">— tất cả —</option>{% for h in ds_hanh_dong %}<option{% if loc.hanh_dong == h %} selected{% endif %}>{{ h }}</option>{% endfor %}</select></label>
+  <label class="text-sm">Người thao tác<br><select name="nguoi" class="min-h-11 rounded border border-slate-300 px-2"><option value="">— tất cả —</option><option value="he_thong"{% if loc.nguoi == "he_thong" %} selected{% endif %}>Hệ thống (tác vụ nền)</option>{% for n in ds_nguoi %}<option value="{{ n.pk|unlocalize }}"{% if loc.nguoi == n.pk|stringformat:"s" %} selected{% endif %}>{{ n.ho_ten }}</option>{% endfor %}</select></label>
+  <label class="text-sm">Đối tượng (vd. mã đơn)<br><input name="doi_tuong" value="{{ loc.doi_tuong }}" placeholder="HF261011-001" class="min-h-11 rounded border border-slate-300 px-2"></label>
+  <button class="min-h-11 rounded bg-sky-700 px-4 font-semibold text-white">Lọc</button>
+</form>
+<p class="mb-2 text-sm">{{ trang.paginator.count }} dòng · trang {{ trang.number }}/{{ trang.paginator.num_pages }}</p>
+<div class="overflow-x-auto">
+<table class="w-full border-collapse bg-white text-left text-sm">
+  <thead><tr class="border-b bg-slate-100"><th class="p-2">Thời điểm</th><th class="p-2">Người</th><th class="p-2">Hành động</th><th class="p-2">Đối tượng</th><th class="p-2">Trước</th><th class="p-2">Sau</th><th class="p-2">IP</th></tr></thead>
+  <tbody>
+  {% for nk in trang %}
+    <tr class="border-b align-top">
+      <td class="whitespace-nowrap p-2">{{ nk.thoi_diem|date:"d/m/Y H:i:s" }}</td>
+      <td class="p-2">{{ nk.nguoi_dung.ho_ten|default:"Hệ thống" }}</td>
+      <td class="p-2 font-mono">{{ nk.hanh_dong }}</td>
+      <td class="p-2 font-mono">{{ nk.doi_tuong }}</td>
+      <td class="max-w-xs break-all p-2 font-mono text-xs">{% if nk.du_lieu_truoc %}{{ nk.du_lieu_truoc }}{% endif %}</td>
+      <td class="max-w-xs break-all p-2 font-mono text-xs">{% if nk.du_lieu_sau %}{{ nk.du_lieu_sau }}{% endif %}</td>
+      <td class="p-2">{{ nk.dia_chi_ip|default:"" }}</td>
+    </tr>
+  {% empty %}<tr><td class="p-2" colspan="7">Không có dòng nào khớp bộ lọc.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+<nav class="mt-3 flex gap-2" aria-label="Phân trang">
+  {% if trang.has_previous %}<a href="?{{ chuoi_loc }}&trang={{ trang.previous_page_number|unlocalize }}" class="inline-flex min-h-11 items-center rounded border border-slate-300 bg-white px-4">← Trang trước</a>{% endif %}
+  {% if trang.has_next %}<a href="?{{ chuoi_loc }}&trang={{ trang.next_page_number|unlocalize }}" class="inline-flex min-h-11 items-center rounded border border-slate-300 bg-white px-4">Trang sau →</a>{% endif %}
+</nav>
+{% endblock %}

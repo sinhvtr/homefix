@@ -1,6 +1,7 @@
 # HomeFix Ops v1
 
 Hệ thống quản lý đơn sửa chữa tại nhà, tự host miễn phí. Sử dụng làm case study học phần Phân tích thiết kế hệ thống thông tin INT1342 tại Khoa Công nghệ thông tin 1 - Học viện Công nghệ Bưu chính Viễn thông (PTIT).
+
 Đặc tả: [SPEC.md](SPEC.md); quy ước: [CLAUDE.md](CLAUDE.md); giả định: [docs/GIA_DINH.md](docs/GIA_DINH.md).
 
 ## Chạy trên máy dev

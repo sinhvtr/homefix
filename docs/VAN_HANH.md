@@ -50,6 +50,9 @@ trỏ `homefix.<ten-mien>` → `http://web:8000`; bật *Always Use HTTPS*.
 không sửa `.env`: tệp `docker-compose.demo.yml` chạy cấu hình thật (gunicorn, `DEBUG` tắt, cookie chỉ HTTPS) và một
 container `cloudflared` mở địa chỉ `https://<ngẫu-nhiên>.trycloudflare.com`.
 
+Trên Windows không cần `make`: **nhấp đúp `demo.bat`** (tự bật Docker Desktop, chạy demo, in địa chỉ) — hướng dẫn
+đầy đủ cho người không lập trình: [HUONG_DAN_DEMO.md](HUONG_DAN_DEMO.md).
+
 ```bash
 make demo        # build + chạy web, worker, db, backup, tunnel
 make demo-url    # in địa chỉ https://….trycloudflare.com (đợi ~10 giây sau make demo)

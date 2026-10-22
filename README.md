@@ -38,6 +38,7 @@ tác vụ nền, xử lý sự cố, rà soát bảo mật): [docs/VAN_HANH.md](
 
 ## Tài liệu
 
+- [docs/HUONG_DAN_DEMO.md](docs/HUONG_DAN_DEMO.md) — **tự chạy bản demo**: nhấp đúp `demo.bat` → nhận địa chỉ HTTPS.
 - [docs/HUONG_DAN_SU_DUNG.md](docs/HUONG_DAN_SU_DUNG.md) — hướng dẫn theo vai trò (cũng ở trang `/huong-dan/`).
 - [docs/ANH_XA_BANG.md](docs/ANH_XA_BANG.md) — ánh xạ lớp ↔ bảng ↔ cột ↔ kiểu, sinh tự động.
 - [docs/GIA_DINH.md](docs/GIA_DINH.md) — giả định, lựa chọn và trạng thái đã chốt.

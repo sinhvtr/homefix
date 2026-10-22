@@ -140,3 +140,23 @@ def test_bo_loc_tien(vao, ra):
 def test_bo_loc_an_sdt():
     assert an_sdt("0901234123") == "090****123"
     assert an_sdt("") == ""
+
+
+def test_cap_lai_mat_khau_mau_giu_du_lieu(client, capsys):
+    from apps.don_sua_chua.models import DonSuaChua
+
+    call_command("nap_du_lieu_mau")
+    so_don = DonSuaChua.objects.count()
+    capsys.readouterr()
+    call_command("cap_lai_mat_khau_mau")
+    ra = capsys.readouterr().out
+    assert sum(1 for d in ra.splitlines() if " 0900" in d) == 18 and DonSuaChua.objects.count() == so_don
+    ten, pin = next(d for d in ra.splitlines() if d.startswith("Thợ")).split()[-2:]
+    assert len(pin) == 6 and pin.isdigit()
+    client.post("/dang-nhap/", {"username": ten, "password": pin})
+    assert client.get("/tho/").status_code == 200
+
+
+def test_cap_lai_mat_khau_mau_khi_chua_co_du_lieu():
+    with pytest.raises(CommandError, match="Chưa có dữ liệu mẫu"):
+        call_command("cap_lai_mat_khau_mau")
